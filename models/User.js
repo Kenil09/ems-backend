@@ -26,6 +26,19 @@ const userSchema = new Schema(
     role: {
       type: String,
       enum: ["employee", "manager", "admin", "superAdmin"],
+      required: true,
+    },
+    designation: {
+      type: Schema.Types.ObjectId,
+      ref: "EmployeeDesignation",
+    },
+    department: {
+      type: Schema.Types.ObjectId,
+      ref: "Department",
+    },
+    company: {
+      type: Schema.Types.ObjectId,
+      ref: "Company",
     },
   },
   {
