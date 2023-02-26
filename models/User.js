@@ -1,8 +1,24 @@
 const { model, Schema } = require("mongoose");
 const bcrypt = require("bcryptjs");
 
+const workExperience = new Schema({
+  previousCompany: {type: String, required: true},
+  jobTitle: {type: String, required: true},
+  fromDate: {type: Date, required: true},
+  toDate: {type: Date, required: true},
+  jobDescription: {type: String, required: true},
+  relevant: {type: Boolean, required: true},
+})
+
+const educationDetails = new Schema({
+  university: {type: String, required: true},
+  degree: {type: String, required: true},
+  dateOfCompletion: {type: Date, required: true},
+})
+
 const userSchema = new Schema(
   {
+    // basic information
     firstName: {
       type: String,
       required: true,
@@ -11,23 +27,15 @@ const userSchema = new Schema(
       type: String,
       required: true,
     },
+    nickName: {
+      type: String,
+    },
     email: {
       type: String,
       required: true,
+      unique: true
     },
-    password: {
-      type: String,
-      required: true,
-    },
-    isActive: {
-      type: String,
-      required: true,
-    },
-    role: {
-      type: String,
-      enum: ["employee", "manager", "admin", "superAdmin"],
-      required: true,
-    },
+    // work information
     designation: {
       type: Schema.Types.ObjectId,
       ref: "EmployeeDesignation",
@@ -39,7 +47,97 @@ const userSchema = new Schema(
     company: {
       type: Schema.Types.ObjectId,
       ref: "Company",
+      required: true,
     },
+    role: {
+      type: String,
+      enum: ["admin", "teamMember", "teamIncharge", "manager", "departmentLead"],
+      required: true,
+    },
+    location: {
+      type: String,
+    },
+    employeeType: {
+      type: String,
+      enum: ["permanent", "onContract", "temporary", "trainee"],
+      required: true,
+    },
+    joiningDate: {
+      type: Date,
+    },
+    reportingManager: {
+      type: Schema.Types.ObjectId,
+      ref: "User"
+    },
+    // Personal Information 
+    gender: {
+      type: String,
+      enum: ['male', 'female', 'other']
+    },
+    birthDate: {
+      type: Date,
+    },
+    maritalStatus: {
+      type: Schema.Types.Boolean,
+    },
+    aboutMeInfo: {
+      type: String
+    },
+    // Identity Info
+    aadharNumber: {
+      type: String,
+      minLength: 12,
+      maxLength: 12
+    },
+    // Contact Info
+    phoneNumber: {
+      type: String
+    },
+    personalContact: {
+      email: {
+        type: String
+      },
+      phoneNumber: {
+        type: String
+      }
+    },
+    address: {
+      street: { type: String},
+      city: { type: String },
+      state: { type: String },
+      country: { type: String },
+      postalCode: { type: String }
+    },
+    // work experience
+    workExperience: {
+      type: [workExperience],
+    },
+    // Education details
+    educationDetails: {
+      type: [educationDetails]
+    },
+    // system required
+    password: {
+      type: String,
+      required: true,
+      minLength: 6
+    },
+    isActive: {
+      type: String,
+      required: true,
+    },
+    isVerified: {
+      type: String,
+      required: true
+    },
+    createdBy: {
+      type: Schema.Types.ObjectId,
+      ref: "User",
+    },
+    updatedBy: {
+      type: Schema.Types.ObjectId,
+      ref: "User"
+    }
   },
   {
     timestamps: true,
