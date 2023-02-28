@@ -1,28 +1,64 @@
 const Company = require("../models/Company");
+const User = require("../models/User");
+const mongoose = require("mongoose");
 const Joi = require("joi");
+const generateOtp = require("../utils/generateOtp");
+const sendSecurityCode = require("../utils/mail/securityCode");
 
-const companyValidation = Joi.object({
-  name: Joi.string().required(),
-  address: Joi.string().required(),
-  city: Joi.string().required(),
-  state: Joi.string().required(),
-  zipcode: Joi.string().length(6).required(),
-});
+const addCompanyValidation = Joi.object({
+  companyDetails: Joi.object({
+    name: Joi.string().required(),
+    address: Joi.string().required(),
+    city: Joi.string().required(),
+    state: Joi.string().required(),
+    zipcode: Joi.string().length(6).required(),
+  }).required(),
+  userDetails: Joi.object({
+    email: Joi.string().email().required(),
+    firstName: Joi.string().required(),
+    lastName: Joi.string().required(),
+    password: Joi.string().min(6).max(20).required(),
+  }).required(),
+}).required();
 
 exports.postAddCompany = async (req, res) => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
   try {
-    const validateRequest = companyValidation.validate(req.body);
+    const validateRequest = addCompanyValidation.validate(req.body);
     if (validateRequest.error) {
       return res
         .status(400)
         .json({ status: "fail", message: validateRequest.error.message });
     }
-    const company = new Company(req.body);
-    await company.save();
-    res.status(200).json({ message: "Company added successfully", company });
+    const company = new Company(req.body.companyDetails);
+    await company.save({ session });
+    const securityCode = generateOtp();
+    const user = new User({
+      ...req.body.userDetails,
+      role: "admin",
+      company: company._id,
+    });
+    const mailStatus = await sendSecurityCode(
+      req.body.userDetails.email,
+      securityCode
+    );
+    if (mailStatus.$metadata.httpStatusCode === 200 && mailStatus.MessageId) {
+      await user.save({ session });
+      session.commitTransaction();
+      return res
+        .status(200)
+        .json({ message: "Company added successfully", company });
+    } else {
+      session.abortTransaction();
+      return res.status(500).json({ message: "Error while sending mail" });
+    }
   } catch (error) {
+    session.abortTransaction();
     console.log("create company", error.message);
     res.status(500).json({ message: "Internal sever error" });
+  } finally {
+    session.endSession();
   }
 };
 
@@ -35,6 +71,20 @@ exports.getAllCompany = async (req, res) => {
     res.status(500).json({ message: "Internal sever error" });
   }
 };
+
+// configure company api
+// create shift
+// same shift break time
+// configure leaves
+
+// Employee crud - pending update and testing with more data
+// Department crud - Next
+// Designation crid - Next
+// Leave all apis
+// attendence thing
+// shift
+// holidays
+// company configuration
 
 exports.getCompany = async (req, res) => {
   try {

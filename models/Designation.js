@@ -11,10 +11,19 @@ const employeeRoleSchema = new Schema(
       ref: "Company",
       required: true,
     },
+    createdBy: {
+      type: Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+    },
+    updatedBy: {
+      type: Schema.Types.ObjectId,
+      ref: "User",
+    },
   },
   {
     timestamps: true,
   }
 );
 
-module.exports = model("EmployeeDesignation", employeeRoleSchema);
+module.exports = model("Designation", employeeRoleSchema);

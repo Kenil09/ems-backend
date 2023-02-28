@@ -2,13 +2,14 @@ const User = require("../models/User");
 const Joi = require("joi");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+const sendSecurityCode = require("../utils/mail/securityCode");
+const generateOtp = require("../utils/generateOtp");
 
 const createUserValidation = Joi.object({
   firstName: Joi.string().required(),
   lastName: Joi.string().required(),
   nickName: Joi.string(),
   email: Joi.string().email().required(),
-  password: Joi.string().min(6).max(20).required(),
   role: Joi.string()
     .valid("admin", "teamMember", "teamIncharge", "manager", "departmentLead")
     .required(),
@@ -63,23 +64,71 @@ const createUserValidation = Joi.object({
   ),
 });
 
+const registerUserValidation = Joi.object({
+  email: Joi.string().email().required(),
+  password: Joi.string().min(6).max(20).required(),
+  securityCode: Joi.string()
+    .pattern(/^[0-9]+$/)
+    .length(6)
+    .required(),
+});
+
 exports.postCreateUser = async (req, res) => {
   try {
     const validateRequest = createUserValidation.validate(req.body);
     if (validateRequest.error) {
+      console.log(validateRequest.error.details);
       return res
         .status(400)
         .json({ status: "fail", message: validateRequest.error.message });
     }
-    const user = new User({ ...req.body, isActive: false });
-    const result = await (
-      await (
+    const securityCode = generateOtp();
+
+    const user = new User({
+      ...req.body,
+      createdBy: req.user._id,
+      securityCode,
+    });
+    const mailStatus = await sendSecurityCode(req.body.email, securityCode);
+    if (mailStatus.$metadata.httpStatusCode === 200 && mailStatus.MessageId) {
+      const result = await (
         await (await user.save()).populate("company")
-      ).populate("department")
-    ).populate("EmployeeRole");
-    res.status(200).json({ message: "User created succesfully", user: result });
+      ).populate("department");
+      return res
+        .status(200)
+        .json({ message: "User created succesfully", user: result });
+    } else {
+      return res.status(500).json({ message: "Error while sending mail" });
+    }
   } catch (error) {
-    console.log("create user", error.message);
+    console.log("create user", error.message, error);
+    res.status(500).json({ message: "Internal sever error" });
+  }
+};
+
+exports.registerUser = async (req, res) => {
+  try {
+    const validateRequest = registerUserValidation.validate(req.body);
+    if (validateRequest.error) {
+      console.log(validateRequest.error.details);
+      return res
+        .status(400)
+        .json({ status: "fail", message: validateRequest.error.message });
+    }
+    const { email, password, securityCode } = req.body;
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+    if (Number(securityCode) !== Number(user.securityCode)) {
+      return res.status(401).json({ message: "Invalid security code" });
+    }
+    user.isActive = true;
+    user.password = password;
+    await user.save();
+    res.status(200).json({ message: "User registerd successfully" });
+  } catch (error) {
+    console.log("Register user", error.message);
     res.status(500).json({ message: "Internal sever error" });
   }
 };
@@ -101,7 +150,9 @@ exports.postLoginUser = async (req, res) => {
         });
         res.status(200).json({ token });
       } else {
-        res.status(400).json({ message: "User is not active" });
+        res
+          .status(400)
+          .json({ message: "Please verify you account with provided email" });
       }
     } else {
       res.status(400).json({ message: "Invalid Password" });

@@ -2,19 +2,19 @@ const { model, Schema } = require("mongoose");
 const bcrypt = require("bcryptjs");
 
 const workExperience = new Schema({
-  previousCompany: {type: String, required: true},
-  jobTitle: {type: String, required: true},
-  fromDate: {type: Date, required: true},
-  toDate: {type: Date, required: true},
-  jobDescription: {type: String, required: true},
-  relevant: {type: Boolean, required: true},
-})
+  previousCompany: { type: String, required: true },
+  jobTitle: { type: String, required: true },
+  fromDate: { type: Date, required: true },
+  toDate: { type: Date, required: true },
+  jobDescription: { type: String, required: true },
+  relevant: { type: Boolean, required: true },
+});
 
 const educationDetails = new Schema({
-  university: {type: String, required: true},
-  degree: {type: String, required: true},
-  dateOfCompletion: {type: Date, required: true},
-})
+  university: { type: String, required: true },
+  degree: { type: String, required: true },
+  dateOfCompletion: { type: Date, required: true },
+});
 
 const userSchema = new Schema(
   {
@@ -33,12 +33,12 @@ const userSchema = new Schema(
     email: {
       type: String,
       required: true,
-      unique: true
+      unique: true,
     },
     // work information
     designation: {
       type: Schema.Types.ObjectId,
-      ref: "EmployeeDesignation",
+      ref: "Designation",
     },
     department: {
       type: Schema.Types.ObjectId,
@@ -51,7 +51,7 @@ const userSchema = new Schema(
     },
     role: {
       type: String,
-      enum: ["admin", "teamMember", "teamIncharge", "manager", "departmentLead"],
+      enum: ["admin", "teamMember", "teamIncharge", "manager"],
       required: true,
     },
     location: {
@@ -60,19 +60,19 @@ const userSchema = new Schema(
     employeeType: {
       type: String,
       enum: ["permanent", "onContract", "temporary", "trainee"],
-      required: true,
     },
     joiningDate: {
       type: Date,
+      default: Date.now(),
     },
     reportingManager: {
       type: Schema.Types.ObjectId,
-      ref: "User"
+      ref: "User",
     },
-    // Personal Information 
+    // Personal Information
     gender: {
       type: String,
-      enum: ['male', 'female', 'other']
+      enum: ["male", "female", "other"],
     },
     birthDate: {
       type: Date,
@@ -81,32 +81,32 @@ const userSchema = new Schema(
       type: Schema.Types.Boolean,
     },
     aboutMeInfo: {
-      type: String
+      type: String,
     },
     // Identity Info
     aadharNumber: {
       type: String,
       minLength: 12,
-      maxLength: 12
+      maxLength: 12,
     },
     // Contact Info
     phoneNumber: {
-      type: String
+      type: String,
     },
     personalContact: {
       email: {
-        type: String
+        type: String,
       },
       phoneNumber: {
-        type: String
-      }
+        type: String,
+      },
     },
     address: {
-      street: { type: String},
+      street: { type: String },
       city: { type: String },
       state: { type: String },
       country: { type: String },
-      postalCode: { type: String }
+      postalCode: { type: String },
     },
     // work experience
     workExperience: {
@@ -114,21 +114,17 @@ const userSchema = new Schema(
     },
     // Education details
     educationDetails: {
-      type: [educationDetails]
+      type: [educationDetails],
     },
     // system required
     password: {
       type: String,
-      required: true,
-      minLength: 6
+      minLength: 6,
     },
     isActive: {
-      type: String,
+      type: Schema.Types.Boolean,
       required: true,
-    },
-    isVerified: {
-      type: String,
-      required: true
+      default: false,
     },
     createdBy: {
       type: Schema.Types.ObjectId,
@@ -136,8 +132,11 @@ const userSchema = new Schema(
     },
     updatedBy: {
       type: Schema.Types.ObjectId,
-      ref: "User"
-    }
+      ref: "User",
+    },
+    securityCode: {
+      type: Schema.Types.Number,
+    },
   },
   {
     timestamps: true,

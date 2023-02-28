@@ -4,7 +4,8 @@ const Joi = require("joi");
 const departmentValidation = Joi.object({
   name: Joi.string().required(),
   company: Joi.string().required(),
-  manager: Joi.string().required(),
+  departmentLead: Joi.string(),
+  parentDepartment: Joi.string(),
 });
 
 exports.postAddDepartment = async (req, res) => {
@@ -17,7 +18,7 @@ exports.postAddDepartment = async (req, res) => {
     }
     const department = new Department(req.body);
     const result = await (
-      await (await department.save()).populate("manager")
+      await (await department.save()).populate("departmentLead")
     ).populate("company");
     res
       .status(200)
@@ -31,7 +32,7 @@ exports.postAddDepartment = async (req, res) => {
 exports.getAllDepartment = async (req, res) => {
   try {
     const departments = await Department.find()
-      .populate("manager")
+      .populate("departmentLead")
       .populate("company");
     res.status(200).json({ departments });
   } catch (error) {
@@ -43,7 +44,7 @@ exports.getAllDepartment = async (req, res) => {
 exports.getDepartment = async (req, res) => {
   try {
     const department = await Department.findById(req.params.id)
-      .populate("manager")
+      .populate("departmentLead")
       .populate("company");
     res.status(200).json({ department });
   } catch (error) {
@@ -75,7 +76,7 @@ exports.updateDepartment = async (req, res) => {
         .status(400)
         .json({ status: "fail", message: validateRequest.error.message });
     }
-    const allowedUpdates = ["name"];
+    const allowedUpdates = ["name", "departmentLead", "parentDepartment"];
     const updates = Object.keys(req.body);
     updates.every((update) => {
       if (!allowedUpdates.includes(update)) {
@@ -89,7 +90,7 @@ exports.updateDepartment = async (req, res) => {
     updates.forEach((update) => (department[update] = req.body[update]));
     let result = await (
       await (await department.save()).populate("company")
-    ).populate("manager");
+    ).populate("departmentLead");
     res
       .status(200)
       .json({ message: "Department updated successfully", department: result });

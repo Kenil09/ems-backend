@@ -11,10 +11,13 @@ const departmentSchema = new Schema(
       ref: "Company",
       required: true,
     },
-    manager: {
+    departmentLead: {
       type: Schema.Types.ObjectId,
       ref: "User",
-      required: true,
+    },
+    parentDepartment: {
+      type: Schema.Types.ObjectId,
+      ref: "Department",
     },
   },
   {
