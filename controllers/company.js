@@ -34,6 +34,11 @@ exports.postAddCompany = async (req, res) => {
     const company = new Company(req.body.companyDetails);
     await company.save({ session });
     const securityCode = generateOtp();
+    const oldUser = await User.find({ email: req.body.userDetails.email });
+    if (oldUser.length) {
+      await session.abortTransaction();
+      return res.json({ message: "User is already registered" });
+    }
     const user = new User({
       ...req.body.userDetails,
       role: "admin",
@@ -45,20 +50,20 @@ exports.postAddCompany = async (req, res) => {
     );
     if (mailStatus.$metadata.httpStatusCode === 200 && mailStatus.MessageId) {
       await user.save({ session });
-      session.commitTransaction();
+      await session.commitTransaction();
       return res
         .status(200)
         .json({ message: "Company added successfully", company });
     } else {
-      session.abortTransaction();
+      await session.abortTransaction();
       return res.status(500).json({ message: "Error while sending mail" });
     }
   } catch (error) {
-    session.abortTransaction();
+    await session.abortTransaction();
     console.log("create company", error.message);
     res.status(500).json({ message: "Internal sever error" });
   } finally {
-    session.endSession();
+    await session.endSession();
   }
 };
 
