@@ -43,6 +43,7 @@ exports.postAddCompany = async (req, res) => {
       ...req.body.userDetails,
       role: "admin",
       company: company._id,
+      owner: true
     });
     const mailStatus = await sendSecurityCode(
       req.body.userDetails.email,

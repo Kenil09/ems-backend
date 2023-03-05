@@ -19,6 +19,14 @@ const departmentSchema = new Schema(
       type: Schema.Types.ObjectId,
       ref: "Department",
     },
+    createdBy: {
+      type: Schema.Types.ObjectId,
+      ref: "User",
+    },
+    updatedBy: {
+      type: Schema.Types.ObjectId,
+      ref: "User",
+    },
   },
   {
     timestamps: true,

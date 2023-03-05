@@ -5,6 +5,6 @@ router.get("/", company.getAllCompany);
 router.get("/:id", company.getCompany);
 router.post("/", company.postAddCompany);
 router.delete("/:id", company.deleteCompany);
-router.patch("/:id", company.updateCompany);
+router.put("/:id", company.updateCompany);
 
 module.exports = router;

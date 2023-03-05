@@ -137,6 +137,9 @@ const userSchema = new Schema(
     securityCode: {
       type: Schema.Types.Number,
     },
+    owner: {
+      type: Schema.Types.Boolean
+    }
   },
   {
     timestamps: true,
