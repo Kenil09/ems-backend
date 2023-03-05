@@ -11,7 +11,7 @@ const createUserValidation = Joi.object({
   nickName: Joi.string(),
   email: Joi.string().email().required(),
   role: Joi.string()
-    .valid("admin", "teamMember", "teamIncharge", "manager", "departmentLead")
+    .valid("admin", "teamMember", "teamIncharge", "manager")
     .required(),
   department: Joi.string(),
   company: Joi.string().required(),

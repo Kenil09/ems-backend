@@ -1,26 +1,52 @@
 const { model, Schema } = require("mongoose");
 
 const shiftSchema = new Schema({
-  shiftName: {
+  name: {
     type: String,
     required: true,
   },
-  shiftType: {
+  type: {
     type: String,
     enum: ["general", "custom"],
     required: true,
   },
-  shiftStartTime: {
+  startTime: {
     type: String,
     required: true,
   },
-  shiftEndTime: {
+  endTime: {
     type: String,
     required: true,
   },
-  //shift-margin remaining
-  userId: {
+  margin: {
+    type: Schema.Types.Boolean,
+    required: true
+  },
+  marginBefore: {
+    type: String,
+    required: false
+  },
+  marginAfter: {
+    type: String,
+    required: false
+  },
+  company: {
+    type: Schema.Types.ObjectId,
+    ref: "Company",
+    required: true,
+  },
+  applicableDepartments: {
+    type: Schema.Types.ObjectId,
+    ref: "Department"
+  },
+  createdBy: {
+    type: Schema.Types.ObjectId,
+    ref: "User",
+  },
+  updatedBy: {
     type: Schema.Types.ObjectId,
     ref: "User",
   },
 });
+
+module.exports = model("Shift", shiftSchema);

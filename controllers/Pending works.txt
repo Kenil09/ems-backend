@@ -1,0 +1,114 @@
+Pending works
+Attendence schema
+Leave schema
+shift schema
+holiday schema
+
+
+Custom shift is applicable for departments
+IF there is no custom shift then company general this will be applied
+
+shift model -> company id for general -> custom mate applicableDepartment and companyid
+
+holiday model ->
+Name
+Date From and to 
+ApplicableShift
+Description
+NoOfDaysBeforeReminderShouldSent: 
+NotifyApplicableEmployee
+ReprocessLeaveOnThatDay
+
+Leave From User side ->
+
+userId
+Date From and to
+Leave type
+Reason for leave
+
+Leave From Admin side ->
+
+Leave Applications
+Leave Types -> 
+Name ->
+Paid ->
+
+
+Suppose holiday
+I created one holiday let's call it dhuleti
+
+From 6 and 7
+
+So This day will be marked as off 
+and In Api Any leave mark on this day will Not considerd
+And balance will be marked +
+
+So When Holiday will be created then any leave on that day will be not considered
+
+And After that any personal
+
+
+
+
+
+Leave Model
+
+LeaveAccount -> When User will create
+LeaveTypes -> Leave balance
+    Admin can change any person leave balance
+
+
+For Leave Create Two Modal
+1. LeaveAccount
+    In this modal we will be having entry for each user about theri leaves once they sign up we will add entry here
+    it looks like below
+    {
+        id: "1232",
+        user_id: "1",
+        paternityLeave: {
+            available: 12,
+            booked: 4
+        },
+        earnedLeave: {
+            available: 12,
+            booked: 0
+        },
+        ...
+    }
+2. Leave
+
+    Here we will be having entries of leave 
+    example: 
+    {
+        userId: "1",
+        leaveType: "CasualLeave"  // this is predefined option
+        startDate: "12/02/2023",
+        endDate: "14/02/2023",
+        reason: "Testing"
+    }
+
+    Fields from  :-
+    userId
+    Date From and to
+    Leave type
+    Reason for leave
+    cancelledBy // This field will come in play if admin or any user with permission don't allow this leave
+
+Leave types are below:-
+
+    CasualLeave
+    EarnedLeave
+    LeaveWithoutPay
+    PaternityLeave
+    SabbaticalLeave
+    SickLeave
+
+
+
+
+
+Attendence model ->
+
+user model 
+department model
+company model
