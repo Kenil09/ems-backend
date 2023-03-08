@@ -31,12 +31,12 @@ const createSendEmailCommand = (
           Charset: "UTF-8",
           Data: `<p>Your otp for generating new account is ${securityCode}</P><br />
           <p>Please click below link to register yourself</p>
-          <a href="${process.env.FRONTEND_URL}/register/${token}"><a/>
+          <a href="${process.env.FRONTEND_URL}/register/${token}" style="color:blue;text-decoration:underline">Click to Register<a/>
           `,
         },
         Text: {
           Charset: "UTF-8",
-          Data: `Your otp for generating new account is ${securityCode}`,
+          Data: `Your otp for generating new account is ${securityCode} `,
         },
       },
       Subject: {

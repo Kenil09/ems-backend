@@ -17,7 +17,6 @@ const addCompanyValidation = Joi.object({
     email: Joi.string().email().required(),
     firstName: Joi.string().required(),
     lastName: Joi.string().required(),
-    password: Joi.string().min(6).max(20).required(),
   }).required(),
 }).required();
 
@@ -43,7 +42,9 @@ exports.postAddCompany = async (req, res) => {
       ...req.body.userDetails,
       role: "admin",
       company: company._id,
-      owner: true
+      owner: true,
+      securityCode,
+
     });
     const mailStatus = await sendSecurityCode(
       req.body.userDetails.email,
