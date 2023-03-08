@@ -6,6 +6,7 @@ const connectDB = require("./utils/db/mongoose");
 const userRoutes = require("./routes/user");
 const departmentRoutes = require("./routes/department");
 const companyRoutes = require("./routes/company");
+const designationRoutes = require("./routes/designation");
 const { verifyToken } = require("./middleware/auth");
 
 connectDB();
@@ -17,6 +18,7 @@ app.use(express.json());
 
 app.use("/user", userRoutes);
 app.use("/department", verifyToken, departmentRoutes);
+app.use("/designation", verifyToken, designationRoutes);
 app.use("/company", companyRoutes);
 
 const port = process.env.PORT || 3001;
