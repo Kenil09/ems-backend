@@ -9,7 +9,12 @@ const client = new SESClient({
   },
 });
 
-const createSendEmailCommand = (toAddress, fromAddress, securityCode, token) => {
+const createSendEmailCommand = (
+  toAddress,
+  fromAddress,
+  securityCode,
+  token
+) => {
   return new SendEmailCommand({
     Destination: {
       /* required */
@@ -44,7 +49,7 @@ const createSendEmailCommand = (toAddress, fromAddress, securityCode, token) => 
 };
 
 module.exports = async (email, securityCode) => {
-  const token = jwt.sign({ email });
+  const token = jwt.sign({ email }, process.env.JWT_SECRET_KEY);
   const sendEmailCommand = createSendEmailCommand(
     email,
     process.env.SOURCE_MAIL,
