@@ -14,7 +14,6 @@ const createUserValidation = Joi.object({
     .valid("admin", "teamMember", "teamIncharge", "manager")
     .required(),
   department: Joi.string(),
-  company: Joi.string().required(),
   designation: Joi.string(),
   location: Joi.string(),
   employeeType: Joi.string().valid(
@@ -52,7 +51,6 @@ const createUserValidation = Joi.object({
       fromDate: Joi.date().required(),
       toDate: Joi.date().required(),
       jobDescription: Joi.string().required(),
-      relevant: Joi.boolean().required(),
     })
   ),
   educationDetails: Joi.array().items(
@@ -86,14 +84,21 @@ exports.postCreateUser = async (req, res) => {
 
     const user = new User({
       ...req.body,
+      company: req.user.company._id,
       createdBy: req.user._id,
       securityCode,
     });
     const mailStatus = await sendSecurityCode(req.body.email, securityCode);
     if (mailStatus.$metadata.httpStatusCode === 200 && mailStatus.MessageId) {
-      const result = await (
-        await (await user.save()).populate("company")
-      ).populate("department");
+      const result =
+        await (await user.save()).populate([
+          "company",
+          "department",
+          "designation",
+          "reportingManager",
+          "createdBy",
+          "updatedBy",
+        ]);
       return res
         .status(200)
         .json({ message: "User created succesfully", user: result });
@@ -165,7 +170,14 @@ exports.postLoginUser = async (req, res) => {
 
 exports.getAllUsers = async (req, res) => {
   try {
-    const users = await User.find().populate("company").populate("department");
+    const users = await User.find().populate([
+      "company",
+      "department",
+      "designation",
+      "reportingManager",
+      "createdBy",
+      "updatedBy",
+    ]);
     res.status(200).json({ users });
   } catch (error) {
     console.log("get All User", error.message);
@@ -176,8 +188,14 @@ exports.getAllUsers = async (req, res) => {
 exports.getUserById = async (req, res) => {
   try {
     const user = await User.findById(req.params.id)
-      .populate("company")
-      .populate("department");
+      .populate([
+        "company",
+        "department",
+        "designation",
+        "reportingManager",
+        "createdBy",
+        "updatedBy",
+      ])
     if (!user) {
       res.status(404).json({ message: "User not found" });
     }

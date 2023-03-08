@@ -6,8 +6,7 @@ const workExperience = new Schema({
   jobTitle: { type: String, required: true },
   fromDate: { type: Date, required: true },
   toDate: { type: Date, required: true },
-  jobDescription: { type: String, required: true },
-  relevant: { type: Boolean, required: true },
+  jobDescription: { type: String },
 });
 
 const educationDetails = new Schema({
@@ -78,7 +77,7 @@ const userSchema = new Schema(
       type: Date,
     },
     maritalStatus: {
-      type: Schema.Types.Boolean,
+      type: Schema.Types.String,
     },
     aboutMeInfo: {
       type: String,
