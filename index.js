@@ -1,50 +1,30 @@
-const express = require('express');
-const cors = require('cors');
-const http = require('http');
-const socketio = require('socket.io');
-
-const app = express();
-const server = http.createServer(app);
-const io = socketio(server);
-
+const express = require("express");
+const cors = require("cors");
 require("dotenv").config();
 const connectDB = require("./utils/db/mongoose");
 //routes
 const userRoutes = require("./routes/user");
 const departmentRoutes = require("./routes/department");
 const companyRoutes = require("./routes/company");
+const designationRoutes = require("./routes/designation");
+const Leave = require('./routes/Leave');
+const { verifyToken } = require("./middleware/auth");
 
 connectDB();
 
-
-// Handle Socket.io connections
-io.on('connection', (socket) => {
-  console.log('A client connected');
-
-  // Handle incoming messages
-  socket.on('message', (data) => {
-    console.log('Received message:', data);
-
-    // Broadcast the message to all connected clients
-    socket.broadcast.emit('message', data);
-  });
-
-  // Handle disconnections
-  socket.on('disconnect', () => {
-    console.log('A client disconnected');
-  });
-});
-
+const app = express();
 
 app.use(cors());
 app.use(express.json());
 
 app.use("/user", userRoutes);
-app.use("/department", departmentRoutes);
+app.use("/department", verifyToken, departmentRoutes);
+app.use("/designation", verifyToken, designationRoutes);
 app.use("/company", companyRoutes);
+app.use("/leave",Leave);
 
-const port = process.env.PORT;
+const port = process.env.PORT || 3001;
 
-server.listen(port, () => {
-  console.log(`Server running on port ${port}`);
+app.listen(port, () => {
+  console.log(`Server is running in port ${port}`);
 });
