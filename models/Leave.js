@@ -1,9 +1,9 @@
 const { model, Schema } = require('mongoose');
 
 const Leave = new Schema({
-    LeaveTypeId:{
+    employee:{
         type : Schema.Types.ObjectId,
-        ref:"",
+        ref:"User",
         require:true
     },
     FromDate:{
@@ -12,6 +12,11 @@ const Leave = new Schema({
     ToDate:{
         type: Date
     },
+    LeaveType: {
+        type: String,
+        enum: ['casualLeave', 'earnedLeave', 'leaveWithoutPay', 'sabbaticalLeave', 'sickLeave'],
+        required: true
+      },
     CancelledBy:{
         type : Schema.Types.ObjectId,
         default:null,
@@ -26,9 +31,12 @@ const Leave = new Schema({
         enum:['Approved','Rejected','Pending'],
         default:'Pending'
     },
-    // this is for messaging purpose only
-    SendTo:{
-        type:String
+    duration:{
+        type:Number
+    },
+    CancelledMessage:{
+        type:String,
+        default:null,
     }
 });
 
