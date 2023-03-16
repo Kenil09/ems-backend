@@ -1,5 +1,15 @@
 const { model, Schema } = require("mongoose");
 
+const weekDefinition = new Schema({
+  sunday: { type: Schema.Types.Boolean, required: true },
+  monday: { type: Schema.Types.Boolean, required: true },
+  tuesday: { type: Schema.Types.Boolean, required: true },
+  wednesday: { type: Schema.Types.Boolean, required: true },
+  thursday: { type: Schema.Types.Boolean, required: true },
+  friday: { type: Schema.Types.Boolean, required: true },
+  saturday: { type: Schema.Types.Boolean, required: true },
+});
+
 const shiftSchema = new Schema({
   name: {
     type: String,
@@ -18,18 +28,19 @@ const shiftSchema = new Schema({
     type: String,
     required: true,
   },
-  margin: {
-    type: Schema.Types.Boolean,
-    required: true
-  },
-  marginBefore: {
-    type: String,
-    required: false
-  },
-  marginAfter: {
-    type: String,
-    required: false
-  },
+  // margin: {
+  //   type: Schema.Types.Boolean,
+  //   required: true
+  // },
+  // marginBefore: {
+  //   type: String,
+  //   required: false
+  // },
+  // marginAfter: {
+  //   type: String,
+  //   required: false
+  // },
+  weekDefinition: [weekDefinition],
   company: {
     type: Schema.Types.ObjectId,
     ref: "Company",
@@ -37,7 +48,7 @@ const shiftSchema = new Schema({
   },
   applicableDepartments: {
     type: Schema.Types.ObjectId,
-    ref: "Department"
+    ref: "Department",
   },
   createdBy: {
     type: Schema.Types.ObjectId,

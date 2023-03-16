@@ -7,6 +7,8 @@ const userRoutes = require("./routes/user");
 const departmentRoutes = require("./routes/department");
 const companyRoutes = require("./routes/company");
 const designationRoutes = require("./routes/designation");
+const shiftRoutes = require("./routes/shift");
+const attendenceRoutes = require("./routes/attendence");
 const { verifyToken } = require("./middleware/auth");
 
 connectDB();
@@ -20,6 +22,8 @@ app.use("/user", userRoutes);
 app.use("/department", verifyToken, departmentRoutes);
 app.use("/designation", verifyToken, designationRoutes);
 app.use("/company", companyRoutes);
+app.use("/shift", shiftRoutes);
+app.use("/attendence", attendenceRoutes);
 
 const port = process.env.PORT || 3001;
 

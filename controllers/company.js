@@ -1,5 +1,6 @@
 const Company = require("../models/Company");
 const User = require("../models/User");
+const Shift = require("../models/Shift");
 const mongoose = require("mongoose");
 const Joi = require("joi");
 const generateOtp = require("../utils/generateOtp");
@@ -32,6 +33,61 @@ exports.postAddCompany = async (req, res) => {
     }
     const company = new Company(req.body.companyDetails);
     await company.save({ session });
+    const generalShift = new Shift({
+      name: "general",
+      startTime: "09:00",
+      endTime: "21:00",
+      company: company?._id,
+      weekDefinition: [
+        {
+          sunday: true,
+          monday: false,
+          tuesday: false,
+          wednesday: false,
+          thursday: false,
+          friday: false,
+          saturday: false,
+        },
+        {
+          sunday: true,
+          monday: false,
+          tuesday: false,
+          wednesday: false,
+          thursday: false,
+          friday: false,
+          saturday: false,
+        },
+        {
+          sunday: true,
+          monday: false,
+          tuesday: false,
+          wednesday: false,
+          thursday: false,
+          friday: false,
+          saturday: false,
+        },
+
+        {
+          sunday: true,
+          monday: false,
+          tuesday: false,
+          wednesday: false,
+          thursday: false,
+          friday: false,
+          saturday: false,
+        },
+        {
+          sunday: true,
+          monday: false,
+          tuesday: false,
+          wednesday: false,
+          thursday: false,
+          friday: false,
+          saturday: false,
+        },
+      ],
+    });
+    await generalShift.save({ session });
     const securityCode = generateOtp();
     const oldUser = await User.find({ email: req.body.userDetails.email });
     if (oldUser.length) {
@@ -44,7 +100,6 @@ exports.postAddCompany = async (req, res) => {
       company: company._id,
       owner: true,
       securityCode,
-
     });
     const mailStatus = await sendSecurityCode(
       req.body.userDetails.email,

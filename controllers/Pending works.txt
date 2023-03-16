@@ -83,7 +83,7 @@ For Leave Create Two Modal
         userId: "1",
         leaveType: "CasualLeave"  // this is predefined option
         startDate: "12/02/2023",
-        endDate: "14/02/2023",
+        endDate: "14/02/2023", 
         reason: "Testing"
     }
 
@@ -104,6 +104,23 @@ Leave types are below:-
     SickLeave
 
 
+    LeaveAccount   Leave
+kenil -> {                          
+    id: 1
+    userid: 2,
+    earned : {
+        available: 12,
+        booked: 0
+    }
+}
+
+leave: {
+     userId: 2
+    Date From and to -> 12 to 13 -> 2 days
+    Leave type -> earned  12 -> bookd 2 -> 12 -> 12 booked 
+    Reason for leave
+    cancelledBy // -> userid
+}
 
 
 
@@ -112,3 +129,60 @@ Attendence model ->
 user model 
 department model
 company model
+
+            All   change    change  change
+User -> "admin", "teamMember", "teamIncharge" -> department, "manager" -> department assign,
+Permission Page -> view, edit, delete, update
+
+
+Admin -> All
+Manager -> deparment assign 2 department
+teamIncharge -> departemnt -> 
+teamMember -> view, user
+
+Company create admin register -> otp -> admin
+create user ->
+
+Deadline ->wednesday
+leaves -> vansh, yash
+Holidays ---
+Attendence -> vishal, ajay -> yash
+Tasks -> kenil
+
+
+Frontend side
+
+attendence 
+
+Page
+
+user select dropdown
+
+calendar
+
+green -> present
+red -> reason 
+
+attendence -> checkin checkout
+
+9 to 6
+
+11:00 checkin 
+1:00 checkout 
+Hour -> 8:00 -present, absent -> 50%
+{
+    id: 1
+    checkin: 11:00
+    checkot: 1:00
+
+},
+{
+
+}
+
+6 hour present
+
+Admin ->
+9:00 to 11:00
+11:00 to 1:00
+2:00 to 6:00
