@@ -159,7 +159,7 @@ exports.cancelledLeave = async (req, res) => {
         if (leave.CancelledBy) {
             return res.status(400).json({ error: 'Leave already cancelled' });
         }
-        const typesLeave = await TypeLeave.findOne({ employee: userId });
+        const typesLeave = await TypeLeave.findOne({ employee: leave.employee });
         if(!typesLeave){
             return res.status(400).json({ error: 'Leave Account not found' });
         }

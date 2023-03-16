@@ -38,6 +38,8 @@ const Leave = new Schema({
         type:String,
         default:null,
     }
-});
+}, {
+    timestamps: true,
+  });
 
 module.exports = model("Leave",Leave);
