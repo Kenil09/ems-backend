@@ -17,6 +17,31 @@ const getUserMonthDetails = Joi.object({
   userId: Joi.string().required(),
 });
 
+const manualEntryValidation = Joi.object({
+  checkIn: Joi.date().required(),
+  checkOut: Joi.date().required(),
+  user: Joi.string().required(),
+});
+
+exports.manualEntry = async (req, res) => {
+  try {
+    const validateRequest = manualEntryValidation.validate(req.body);
+    if (validateRequest.error) {
+      return res
+        .status(400)
+        .json({ status: "fail", message: validateRequest.error.message });
+    }
+    const addEntry = new Attendence(req.body);
+    const result = await (await addEntry.save()).populate("user");
+    res
+      .status(200)
+      .json({ entry: result, message: "Entry added successfully" });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
 exports.checkIn = async (req, res) => {
   try {
     const now = new Date();
