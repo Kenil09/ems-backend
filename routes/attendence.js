@@ -12,6 +12,6 @@ router.get("/checkIn", verifyToken, checkIn);
 router.get("/checkOut", verifyToken, checkOut);
 router.get("/userAvailableStatus/:id", userStatus);
 router.post("/getMonthAttendence", getUserMonthDetails);
-router.get("/manualEntry", verifyToken, manualEntry);
+router.post("/manualEntry", verifyToken, manualEntry);
 
 module.exports = router;
