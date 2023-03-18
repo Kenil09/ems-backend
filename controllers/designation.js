@@ -16,17 +16,24 @@ exports.addDesignation = async (req, res) => {
       createdBy: req.user._id,
       company: req.user.company._id,
     });
-    const result = await (await designation.save().populate("createdBy")).populate("company");
-    res.status(200).json({ message: "Designation added successfully" });
+    const result = await (await designation.save()).populate([
+      "company",
+      "createdBy",
+    ]);
+    res.status(200).json({ message: "Designation added successfully", designation: result });
   } catch (error) {
-    console.log("error in adding designation");
+    console.log("error in adding designation", error.message);
     res.status(500).json({ message: "Internal server error" });
   }
 };
 
 exports.getAllDesignation = async (req, res) => {
   try {
-    const designations = await Designation.find({ company: req.user.company._id });
+    const designations = await Designation.find({ company: req.user.company._id }).populate([
+      "company",
+      "createdBy",
+      "updatedBy"
+    ]);
     if (!designations) {
       return res.status(404).json({ message: "No designation found" });
     }
@@ -56,9 +63,9 @@ exports.deleteDesignation = async (req, res) => {
     if (!designation) {
       return res.status(404).json({ message: "Designation not found" });
     }
-    res.status(200).json({ message: "Designation deleted successfully" });
+    res.status(200).json({ message: "Designation deleted successfully", designation });
   } catch (error) {
-    console.log("error in deleting designation");
+    console.log("error in deleting designation", error);
     res.status(500).json({ message: "Internal server error" });
   }
 };
@@ -84,7 +91,7 @@ exports.updateDesignation = async (req, res) => {
     let result = await (await designation.save()).populate("updatedBy");
     res.status(200).json({ message: "Designation updated successfully", designation: result });
   } catch (error) {
-    console.log("error in updating designation");
+    console.log("error in updating designation", error);
     res.status(500).json({ message: "Internal server error" });
   }
 };
