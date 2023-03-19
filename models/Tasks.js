@@ -42,7 +42,7 @@ const taskSchema = new Schema(
     lateSubmissionReason: {
       type: String,
     },
-    reviewDate: {
+    submissionDate: {
       type: Schema.Types.Date,
     },
     completedDate: {

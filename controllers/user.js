@@ -4,6 +4,7 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const sendSecurityCode = require("../utils/mail/securityCode");
 const generateOtp = require("../utils/generateOtp");
+const uploadFileToS3 = require("../utils/upload/uploadFileToS3");
 
 const createUserValidation = Joi.object({
   firstName: Joi.string().required(),
@@ -90,15 +91,16 @@ exports.postCreateUser = async (req, res) => {
     });
     const mailStatus = await sendSecurityCode(req.body.email, securityCode);
     if (mailStatus.$metadata.httpStatusCode === 200 && mailStatus.MessageId) {
-      const result =
-        await (await user.save()).populate([
-          "company",
-          "department",
-          "designation",
-          "reportingManager",
-          "createdBy",
-          "updatedBy",
-        ]);
+      const result = await (
+        await user.save()
+      ).populate([
+        "company",
+        "department",
+        "designation",
+        "reportingManager",
+        "createdBy",
+        "updatedBy",
+      ]);
       return res
         .status(200)
         .json({ message: "User created succesfully", user: result });
@@ -187,15 +189,14 @@ exports.getAllUsers = async (req, res) => {
 
 exports.getUserById = async (req, res) => {
   try {
-    const user = await User.findById(req.params.id)
-      .populate([
-        "company",
-        "department",
-        "designation",
-        "reportingManager",
-        "createdBy",
-        "updatedBy",
-      ])
+    const user = await User.findById(req.params.id).populate([
+      "company",
+      "department",
+      "designation",
+      "reportingManager",
+      "createdBy",
+      "updatedBy",
+    ]);
     if (!user) {
       res.status(404).json({ message: "User not found" });
     }
@@ -213,6 +214,31 @@ exports.deleteUser = async (req, res) => {
       res.status(404).json({ message: "User not found" });
     }
     res.status(200).json({ message: "User is deleted successfully", user });
+  } catch (error) {
+    console.log("get user by id", error.message);
+    res.status(500).json({ message: "Internal sever error" });
+  }
+};
+
+exports.updateProfilePic = async (req, res) => {
+  try {
+    const { files } = req;
+    if (files.length !== 1 && !req.params.id) {
+      return res.status(400).json({ message: "Bad request" });
+    }
+    const user = await User.findById(req.params.id);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+    const response = await uploadFileToS3(
+      files[0],
+      process.env.BUCKET,
+      `profile/${user?._id.toString()}`
+    );
+    if (response.$metadata.httpStatusCode !== 200) {
+      return res.status(500).json({ message: "Error while uploading picture" });
+    }
+    res.status(200).json({ message: "Profile picture updated successfully" });
   } catch (error) {
     console.log("get user by id", error.message);
     res.status(500).json({ message: "Internal sever error" });
