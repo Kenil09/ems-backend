@@ -1,10 +1,13 @@
 const User = require("../models/User");
 const Joi = require("joi");
 const bcrypt = require("bcryptjs");
+const mongoose = require("mongoose");
 const jwt = require("jsonwebtoken");
+const sharp = require("sharp");
 const sendSecurityCode = require("../utils/mail/securityCode");
 const generateOtp = require("../utils/generateOtp");
 const uploadFileToS3 = require("../utils/upload/uploadFileToS3");
+const removeFilesFromS3 = require("../utils/upload/removeFilesFromS3");
 
 const createUserValidation = Joi.object({
   firstName: Joi.string().required(),
@@ -208,15 +211,30 @@ exports.getUserById = async (req, res) => {
 };
 
 exports.deleteUser = async (req, res) => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
   try {
-    const user = await User.findByIdAndDelete(req.params.id);
+    const user = await User.findByIdAndDelete(req.params.id).session(session);
     if (!user) {
       res.status(404).json({ message: "User not found" });
     }
+    if (user?.profilePicture && user?.profilePicture !== "default.jpeg") {
+      const response = await removeFilesFromS3(
+        process.env.BUCKET,
+        user?.profilePicture
+      );
+      if (response.$metadata.httpStatusCode !== 200) {
+        await session.abortTransaction();
+        return res.status(500).json({ message: "Internal server error" });
+      }
+    }
+    await session.commitTransaction();
     res.status(200).json({ message: "User is deleted successfully", user });
   } catch (error) {
     console.log("get user by id", error.message);
     res.status(500).json({ message: "Internal sever error" });
+  } finally {
+    await session.endSession();
   }
 };
 
@@ -230,14 +248,24 @@ exports.updateProfilePic = async (req, res) => {
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
+    const image = await sharp(files[0].buffer).metadata();
+    const resizeImage = await sharp(files[0].buffer)
+      .resize({
+        width: image.width / 2,
+        height: image.height / 2,
+      })
+      .toBuffer();
     const response = await uploadFileToS3(
-      files[0],
+      { buffer: resizeImage, originalname: files[0].originalname },
       process.env.BUCKET,
       `profile/${user?._id.toString()}`
     );
     if (response.$metadata.httpStatusCode !== 200) {
       return res.status(500).json({ message: "Error while uploading picture" });
     }
+    const fileType = req.files[0].originalname.split(".");
+    user.profilePicture = `${user._id}.${fileType[fileType.length - 1]}`;
+    await user.save();
     res.status(200).json({ message: "Profile picture updated successfully" });
   } catch (error) {
     console.log("get user by id", error.message);
