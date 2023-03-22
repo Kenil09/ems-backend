@@ -23,7 +23,93 @@ const manualEntryValidation = Joi.object({
   user: Joi.string().required(),
 });
 
-exports.manualEntry = async (req, res) => {
+const getUserEntryValidation = Joi.object({
+  userId: Joi.string().required(),
+  date: Joi.date().required(),
+});
+
+const editAttendenceEntry = Joi.object({
+  entryId: Joi.string().required(),
+  checkIn: Joi.date().required(),
+  checkOut: Joi.date().required(),
+});
+
+exports.getAttendenceEntry = async (req, res) => {
+  try {
+    const validateRequest = getUserEntryValidation.validate(req.body);
+    if (validateRequest.error) {
+      return res
+        .status(400)
+        .json({ status: "fail", message: validateRequest.error.message });
+    }
+    const startDate = dayjs(req.body.date).startOf("day");
+    const endDate = dayjs(startDate).endOf("day");
+
+    const userEntries = await Attendence.find({
+      user: req.body.userId,
+      createdAt: { $gte: startDate.toDate(), $lte: endDate.toDate() },
+    }).populate(["user"]);
+
+    res.status(200).json({ attendence: userEntries });
+  } catch (error) {
+    console.log("error in get user entries route", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+exports.updateAttendenceEntry = async (req, res) => {
+  try {
+    const validateRequest = editAttendenceEntry.validate(req.body);
+    if (validateRequest.error) {
+      return res
+        .status(400)
+        .json({ status: "fail", message: validateRequest.error.message });
+    }
+    const { entryId, checkIn, checkOut } = req.body;
+    const attendenceEntry = await Attendence.findById(entryId);
+    if (!attendenceEntry) {
+      return res.status(404).json({ message: "record not found" });
+    }
+    if (
+      !dayjs(checkIn).isAfter(dayjs(checkOut)) ||
+      dayjs(checkIn).date() !== dayjs(checkOut).date()
+    ) {
+      return res
+        .status(400)
+        .json({ messgae: "Invalid check in date provided" });
+    }
+    attendenceEntry.checkIn = checkIn;
+    attendenceEntry.checkOut = checkOut;
+    const result = await (await attendenceEntry.save()).populate(["user"]);
+    res.status(200).json({
+      message: "Attendence record updated successfully",
+      attendence: result,
+    });
+  } catch (error) {
+    console.log("error in update attendence entries route", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+exports.deleteAttendenceEntry = async (req, res) => {
+  try {
+    if (req.params.id) {
+      return res.status(400).json({ message: "bad request" });
+    }
+    const attendence = await Attendence.findByIdAndDelete(req.params.id);
+    if (!attendence) {
+      return res.status(404).json({ message: "Record not found" });
+    }
+    res
+      .status(200)
+      .json({ message: "Attendence entry deleted successfully", attendence });
+  } catch (error) {
+    console.log("error in delete attendence entries route", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+exports.addAttendenceEntry = async (req, res) => {
   try {
     const validateRequest = manualEntryValidation.validate(req.body);
     if (validateRequest.error) {
