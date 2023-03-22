@@ -216,3 +216,12 @@ exports.getUserLeaves = async (req, res) => {
         res.status(500).json({ success: false, message: err.message });
     }
 };
+exports.getAllLeaveAccounts=async (req,res)=>{
+    try{
+        const AllLeaveAccount=await TypeLeave.find();
+        res.status(200).json(AllLeaveAccount);
+    }catch(err){
+        res.status(500).json({ success: false, message: err.message });
+
+    }
+}

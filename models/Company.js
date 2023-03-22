@@ -22,6 +22,10 @@ const companySchema = new Schema(
       type: String,
       required: true,
     },
+    configured:{
+      type:Schema.Types.Boolean,
+      default:false,
+    }
   },
   {
     timestamps: true,
