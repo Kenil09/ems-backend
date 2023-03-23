@@ -24,14 +24,5 @@ const leaveSchema = new mongoose.Schema({
       taken: { type: Number, default: 0 }
     }
   });
-  leaveSchema.pre('save', function (next) {
-    const leaveDefaults = new CompanyLeaveAccount();
-    this.casualLeave.total = leaveDefaults.casualLeave;
-    this.earnedLeave.total = leaveDefaults.earnedLeave;
-    this.leaveWithoutPay.total = leaveDefaults.leaveWithoutPay;
-    this.sabbaticalLeave.total = leaveDefaults.sabbaticalLeave;
-    this.sickLeave.total = leaveDefaults.sickLeave;
-    next();
-  })
    module.exports = mongoose.model('TypesLeave', leaveSchema);
   

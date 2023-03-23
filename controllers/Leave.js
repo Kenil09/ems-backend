@@ -1,5 +1,7 @@
 const Leave = require('../models/Leave');
 const TypeLeave = require('../models/TypesLeave');
+const Company = require("../models/Company");
+const CompanyLeaveAccount = require('../models/CompanyLeaveAccount');
 const User = require("../models/User");
 
 const joi = require('joi');
@@ -9,20 +11,28 @@ const validateLeave = joi.object({
     FromDate: joi.string().required(),
     ToDate: joi.string().required(),
 })
+const validateCompanyLeaveAccount = joi.object({
+    companyId: joi.string().required(),
+    casualLeave: joi.string().required(),
+    earnedLeave: joi.string().required(),
+    leaveWithoutPay: joi.string().required(),
+    sabbaticalLeave: joi.string().required(),
+    sickLeave: joi.string().required(),
+})
 function addDays(date) {
     var result = new Date(date);
     result.setDate(result.getDate() + 1);
     return result;
 }
-function isDateEqual(fromDate,ToDate){
-    const isfromDate=new Date(fromDate).getDate();
-    const isToDate=new Date(ToDate).getDate();
-    return isfromDate===isToDate;
+function isDateEqual(fromDate, ToDate) {
+    const isfromDate = new Date(fromDate).getDate();
+    const isToDate = new Date(ToDate).getDate();
+    return isfromDate === isToDate;
 }
 // Function to apply for leave
 exports.applyLeave = async (req, res) => {
     const { employee, leaveType, fromDate, toDate, reason } = req.body;
-    console.log(fromDate,"fromDate");
+    console.log(fromDate, "fromDate");
     try {
         // Find the user's leave record
         const validLeaveTypes = [
@@ -38,9 +48,9 @@ exports.applyLeave = async (req, res) => {
             return res.status(400).json({ message: 'Invalid leave type' });
         }
         let duration;
-        if(fromDate==toDate){
-            duration=1;
-        }else{
+        if (fromDate == toDate) {
+            duration = 1;
+        } else {
             duration = Math.ceil((addDays(toDate) - new Date(fromDate)) / (1000 * 60 * 60 * 24));
         }
         let userLeave = await TypeLeave.findOne({ employee: employee });
@@ -86,9 +96,9 @@ exports.applyLeave = async (req, res) => {
             ToDate: toDate,
             Reason: reason,
             LeaveType: leaveType,
-            Status : 'Approved',
-            duration:duration,
-            CancelledBy : null
+            Status: 'Approved',
+            duration: duration,
+            CancelledBy: null
         });
 
         // Save the new leave request
@@ -96,7 +106,7 @@ exports.applyLeave = async (req, res) => {
 
         /////
         const findLeaveAccount = await TypeLeave.findOne({ employee: employee });
-        
+
         findLeaveAccount[leaveType].taken += duration;
         await findLeaveAccount.save()
         /////
@@ -108,6 +118,39 @@ exports.applyLeave = async (req, res) => {
     }
 };
 
+exports.setLeaves = async (req, res) => {
+    try {
+        const validateRequest = validateCompanyLeaveAccount.validate(req.body)
+        if (validateRequest.error) {
+            console.log(validateRequest.error.details);
+            return res
+                .status(400)
+                .json({ status: "fail", message: validateRequest.error.message });
+        }
+        const { companyId, casualLeave, earnedLeave, leaveWithoutPay, sabbaticalLeave, sickLeave } = req.body
+        const isLeaveSetted = await Company.findOne({ _id: companyId });
+        console.log(isLeaveSetted, "isleaveSetted")
+        if (isLeaveSetted.configured) {
+            return res.status(400).json({ message: "Employees Leaves is Already setted" });
+        }
+        const newLeaveAccount = new CompanyLeaveAccount({
+            company: companyId,
+            casualLeave,
+            earnedLeave,
+            leaveWithoutPay,
+            sabbaticalLeave,
+            sickLeave
+        })
+        await newLeaveAccount.save();
+
+        isLeaveSetted.configured = true;
+        await isLeaveSetted.save()
+        return res.status(200).json({ message: 'New LeaveAccount Created Successfully' });
+    } catch (err) {
+        console.log(err);
+        return res.status(500).json({ message: 'Something went wrong', err });
+    }
+}
 exports.approveLeave = async (req, res) => {
     try {
         const { leaveId } = req.params;
@@ -127,7 +170,7 @@ exports.approveLeave = async (req, res) => {
 
         // Cut leave days from employee's leave types
         const leaveType = leave.LeaveType;
-        
+
         const typesLeave = await TypeLeave.findOne({ employee: userId });
         if (!typesLeave) {
             return res.status(400).json({ message: 'Leave balance not found' });
@@ -160,17 +203,17 @@ exports.cancelledLeave = async (req, res) => {
             return res.status(400).json({ error: 'Leave already cancelled' });
         }
         const typesLeave = await TypeLeave.findOne({ employee: leave.employee });
-        if(!typesLeave){
+        if (!typesLeave) {
             return res.status(400).json({ error: 'Leave Account not found' });
         }
         typesLeave[leave.LeaveType].taken -= leave.duration;
         await typesLeave.save();
         leave.CancelledBy = userId;
         leave.Status = 'Rejected';
-        if(CancelledMessage){
+        if (CancelledMessage) {
             leave.CancelledMessage = CancelledMessage;
         }
-        
+
         await leave.save();
 
         return res.json({ message: 'Leave cancelled successfully' });
@@ -183,15 +226,34 @@ exports.getAvailableLeaves = async (req, res) => {
     try {
         const leaves = await TypeLeave.findOne({ employee: req.params.userId });
         const user = await User.findOne({ _id: req.params.userId });
+        console.log(user, "User")
         if (leaves && user) {
             return res.status(200).json({ success: true, leaves });
         }
         if (!leaves && user) {
-            const newUserTypeLeave = new TypeLeave({
-                employee: req.params.userId
-            })
-            await newUserTypeLeave.save();
-            return res.status(200).json({ success: true,message:"new Created Leave", leaves:newUserTypeLeave });
+            const { company } = user;
+            const data = await CompanyLeaveAccount.findOne({ company: company });
+            if (data) {
+                const { casualLeave, earnedLeave, leaveWithoutPay, sabbaticalLeave, sickLeave } = data
+                const newUserTypeLeave = new TypeLeave({
+                    employee: req.params.userId,
+                })
+                newUserTypeLeave.casualLeave.total = casualLeave;
+                newUserTypeLeave.earnedLeave.total = earnedLeave;
+                newUserTypeLeave.leaveWithoutPay.total = leaveWithoutPay;
+                newUserTypeLeave.sabbaticalLeave.total = sabbaticalLeave;
+                newUserTypeLeave.sickLeave.total = sickLeave;
+                await newUserTypeLeave.save();
+                return res.status(200).json({ success: true, message: "new Created Leave", leaves: newUserTypeLeave });
+
+            } else {
+                const newUserTypeLeave = new TypeLeave({
+                    employee: req.params.userId,
+                })
+                await newUserTypeLeave.save();
+                return res.status(200).json({ success: true, message: "new Created Leave", leaves: newUserTypeLeave });
+
+            }
         } else {
             return res.status(400).json({ success: false, message: "Leaves not found" });
         }
@@ -216,11 +278,11 @@ exports.getUserLeaves = async (req, res) => {
         res.status(500).json({ success: false, message: err.message });
     }
 };
-exports.getAllLeaveAccounts=async (req,res)=>{
-    try{
-        const AllLeaveAccount=await TypeLeave.find();
+exports.getAllLeaveAccounts = async (req, res) => {
+    try {
+        const AllLeaveAccount = await TypeLeave.find();
         res.status(200).json(AllLeaveAccount);
-    }catch(err){
+    } catch (err) {
         res.status(500).json({ success: false, message: err.message });
 
     }
