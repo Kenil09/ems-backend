@@ -1,10 +1,17 @@
 const Shift = require("../models/Shift");
 const Joi = require("joi");
+const mongoose = require("mongoose");
 
 const createShiftValidation = Joi.object({
   name: Joi.string().required(),
-  startTime: Joi.string().required(),
-  endTime: Joi.string().required(),
+  startTime: Joi.string()
+    .length(5)
+    .regex(/(\d){2}:(\d){2}/)
+    .required(),
+  endTime: Joi.string()
+    .length(5)
+    .regex(/(\d){2}:(\d){2}/)
+    .required(),
   weekDefinition: Joi.array()
     .items(
       Joi.object({
@@ -43,7 +50,7 @@ exports.addShift = async (req, res) => {
     });
     const result = await (
       await shift.save()
-    ).populate(["company", "applicableDepartments"]);
+    ).populate(["company", "applicableDepartments", "createdBy"]);
     return res
       .status(200)
       .json({ message: "Shift created succesfully", shift: result });
@@ -55,9 +62,12 @@ exports.addShift = async (req, res) => {
 
 exports.getCompanyShifts = async (req, res) => {
   try {
-    const shifts = await Shift.find({ company: req.params.id })
-      .populate("company")
-      .populate("applicableDepartments");
+    const shifts = await Shift.find({ company: req.params.id }).populate([
+      "company",
+      "createdBy",
+      "applicableDepartments",
+      "updatedBy",
+    ]);
     res.status(200).json({ shifts });
   } catch (error) {
     console.log("Get company shifts", error.message);
@@ -67,11 +77,12 @@ exports.getCompanyShifts = async (req, res) => {
 
 exports.deleteShift = async (req, res) => {
   try {
-    const shift = await Shift.findByIdAndDelete(req.params._id);
+    const id = mongoose.Types.ObjectId(req.params.id);
+    const shift = await Shift.findOneAndDelete(id);
     if (!shift) {
-      res.status(404).json("Shift not found");
+      return res.status(404).json({ message: "Shift not found" });
     }
-    res.status(200).json({ message: "shift deleted successfully" });
+    res.status(200).json({ message: "shift deleted successfully", shift });
   } catch (error) {
     console.log("Get company shifts", error.message);
     res.status(500).json({ message: "Internal sever error" });
@@ -100,7 +111,7 @@ exports.updateShift = async (req, res) => {
     updates.forEach((update) => (shift[update] = req.body[update]));
     let result = await (
       await shift.save()
-    ).populate(["company", "applicableDepartments"]);
+    ).populate(["company", "applicableDepartments", "createdBy", "updatedBy"]);
     res
       .status(200)
       .json({ message: "Shift updated successfully", shift: result });

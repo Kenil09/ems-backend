@@ -46,10 +46,12 @@ const shiftSchema = new Schema({
     ref: "Company",
     required: true,
   },
-  applicableDepartments: {
-    type: Schema.Types.ObjectId,
-    ref: "Department",
-  },
+  applicableDepartments: [
+    {
+      type: Schema.Types.ObjectId,
+      ref: "Department",
+    },
+  ],
   createdBy: {
     type: Schema.Types.ObjectId,
     ref: "User",
