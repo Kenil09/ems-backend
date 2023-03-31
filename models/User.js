@@ -137,8 +137,11 @@ const userSchema = new Schema(
       type: Schema.Types.Number,
     },
     owner: {
-      type: Schema.Types.Boolean
-    }
+      type: Schema.Types.Boolean,
+    },
+    profilePicture: {
+      type: Schema.Types.String,
+    },
   },
   {
     timestamps: true,
