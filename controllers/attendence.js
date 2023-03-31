@@ -136,10 +136,12 @@ exports.checkIn = async (req, res) => {
       user: req.user._id,
       createdAt: { $gte: today },
     }).sort({ createdAt: -1 });
-    if (!checkUserCheckIn.checkOut) {
+    if (checkUserCheckIn && !checkUserCheckIn?.checkOut) {
       return res.status(400).json({ message: "User is already check in" });
     }
-
+    // if (!checkUserCheckIn.checkOut) {
+    //   return res.status(400).json({ message: "User is already check in" });
+    // }
     const attendence = new Attendence({
       checkIn: new Date(),
       user: req.user._id,
@@ -198,6 +200,20 @@ const calculateHours = (attendedHour, shiftHours) => {
   return attendType;
 };
 
+const getPresentWeek = (day) => {
+  if (day >= 1 && day <= 7) {
+    return 0;
+  } else if (day >= 8 && day <= 14) {
+    return 1;
+  } else if (day >= 15 && day <= 21) {
+    return 2;
+  } else if (day >= 22 && day <= 28) {
+    return 3;
+  } else {
+    return 4;
+  }
+};
+
 const calculateAttendence = async (year, month, shift, user) => {
   const startMonth = dayjs([year, month]).add(
     dayjs([year, month]).utcOffset(),
@@ -233,7 +249,8 @@ const calculateAttendence = async (year, month, shift, user) => {
       );
     });
 
-    const presentWeek = calcDay.week() - startMonth.week();
+    // const presentWeek = calcDay.week() - startMonth.week();
+    const presentWeek = getPresentWeek(calcDay.day());
     const isWeekend =
       shift.weekDefinition[presentWeek][calcDay.format("dddd").toLowerCase()];
     const todayInfo = {
