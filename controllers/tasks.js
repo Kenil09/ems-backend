@@ -15,6 +15,14 @@ const completeTaskValidation = Joi.object({
   rating: Joi.number().min(1).max(5),
 });
 
+const updateTaskValidation = Joi.object({
+  title: Joi.string(),
+  description: Joi.string(),
+  reporter: Joi.string(),
+  assignee: Joi.string(),
+  dueDate: Joi.string(),
+});
+
 // Notify assignee
 exports.createTask = async (req, res) => {
   try {
@@ -24,13 +32,30 @@ exports.createTask = async (req, res) => {
         .status(400)
         .json({ status: "fail", message: validateRequest.error.message });
     }
+    const { files } = req;
     const task = new Tasks({ ...req.body, state: "assigned" });
+    if (files.length) {
+      const response = await uploadFilesToS3(
+        files,
+        process.env.BUCKET,
+        `tasks/${task._id.toString()}/attachments`
+      );
+      const badResponse = response.filter(
+        (resp) => resp.$metadata.httpStatusCode !== 200
+      );
+      if (badResponse.length) {
+        return res
+          .status(500)
+          .json({ message: "Error while submitting files" });
+      }
+    }
+
     const result = await (await task.save()).populate(["assignee", "reporter"]);
     res
       .status(201)
       .json({ message: "Task assigned successfully", task: result });
   } catch (error) {
-    console.log("create tasks", error);
+    console.log("create tasks", error, error.message);
     res.status(500).json({ message: "Internal server error" });
   }
 };
@@ -51,7 +76,7 @@ exports.submitTask = async (req, res) => {
     const response = await uploadFilesToS3(
       files,
       process.env.BUCKET,
-      `tasks/${task._id.toString()}`
+      `tasks/${task._id.toString()}/submission`
     );
     const badResponse = response.filter(
       (resp) => resp.$metadata.httpStatusCode !== 200
@@ -101,6 +126,18 @@ exports.completeTask = async (req, res) => {
   }
 };
 
+exports.getUserTasks = async (req, res) => {
+  try {
+    const tasks = await Tasks.find({ assignee: req.params.id })
+      .populate("assignee")
+      .populate("reporter");
+    res.status(200).json({ tasks });
+  } catch (error) {
+    console.log("get task error", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
 exports.reassignTask = async (req, res) => {
   try {
     if (!req.params.id) {
@@ -121,19 +158,36 @@ exports.reassignTask = async (req, res) => {
   }
 };
 
-/*
-Api and socket thing needed in this
-Create task - notify assignee
-submitTask - multipart form data api - { state: 'review', submissionFiles: [] }
-completeTask - rating will added
-sendBackTask - reassign task for in complete work and add reason in discusssion group
-Rate user work in this
-What admin sees and what user sees
-
-user side task assigned to him
-Will be cards of tasks and clicking upon task
-will have details about task
-Assignee, reported, due date, task header and details 
-Under that will have chat space for discussion of task
-When Click on Submit task Open modal and add dropzone there for accepting files
-*/
+exports.updateTask = async (req, res) => {
+  try {
+    const validateRequest = updateTaskValidation.validate(req.body);
+    if (!req.params.id) {
+      return res.status(400).json({ message: "bad request" });
+    }
+    const task = await Tasks.findById(req.params.id);
+    if (!task) {
+      return res.status(404).json({ message: "Unable to find the task" });
+    }
+    const allowedUpdates = [
+      "title",
+      "descirption",
+      "assignee",
+      "reporter",
+      "dueDate",
+    ];
+    const updates = Object.keys(req.body);
+    updates.every((update) => {
+      if (!allowedUpdates.includes(update)) {
+        return res.status(401).json({ message: `${update} is not allowed` });
+      }
+    });
+    updates.forEach((update) => (task[update] = req.body[update]));
+    let result = await (await task.save()).populate(["assignee", "reporter"]);
+    res
+      .status(200)
+      .json({ message: "Task updated successfully", task: result });
+  } catch (error) {
+    console.log("task update", error.message);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};

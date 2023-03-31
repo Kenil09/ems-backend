@@ -177,10 +177,25 @@ exports.checkOut = async (req, res) => {
 };
 
 const colorScheme = {
-  leave: "blue",
-  absent: "red",
+  leave: "lightblue",
+  absent: "lightsalmon", // red
   weekend: "yellow",
-  present: "green",
+  present: "lightgreen",
+  default: "white",
+  attendedAbsent: "salmon",
+};
+
+const calculateHours = (attendedHour, shiftHours) => {
+  const hour = attendedHour / shiftHours;
+  let attendType = "";
+  if (!hour) {
+    attendType = "unattended";
+  } else if (hour <= 0.5) {
+    attendType = "halfDay";
+  } else {
+    attendType = "present";
+  }
+  return attendType;
 };
 
 const calculateAttendence = async (year, month, shift, user) => {
@@ -201,9 +216,8 @@ const calculateAttendence = async (year, month, shift, user) => {
     createdAt: { $gte: startMonth.toISOString(), $lte: endMonth.toISOString() },
     CancelledBy: null,
   });
-  // const startMonth = dayjs([year, month]);
   const userMonth = [];
-  const presentDay = dayjs().add(dayjs().utcOffset(), "minutes");
+  const presentDay = dayjs();
   for (let i = 1; i <= startMonth.daysInMonth(); i++) {
     const calcDay = dayjs([year, month, i]).add(
       dayjs([year, month, i]).utcOffset(),
@@ -212,27 +226,44 @@ const calculateAttendence = async (year, month, shift, user) => {
     const todayAttendence = attendences.filter(
       (attendence) => dayjs(attendence.createdAt).get("D") === calcDay.get("D")
     );
-    const todayLeave = leaves.find(
-      (leave) =>
-        dayjs(leave.FromDate).get("D") >= calcDay.get("D") &&
-        dayjs(leave.ToDate).get("D") <= calcDay.get("D")
-    );
+    const todayLeave = leaves.find((leave) => {
+      return (
+        calcDay.get("date") >= dayjs(leave.FromDate).get("date") &&
+        calcDay.get("date") <= dayjs(leave.ToDate).get("date")
+      );
+    });
+
     const presentWeek = calcDay.week() - startMonth.week();
     const isWeekend =
       shift.weekDefinition[presentWeek][calcDay.format("dddd").toLowerCase()];
     const todayInfo = {
       start: calcDay.format("YYYY-MM-DD"),
       end: calcDay.format("YYYY-MM-DD"),
+      display: "background",
+      color: colorScheme.default,
     };
-    if (!todayAttendence.length && !Boolean(calcDay > presentDay)) {
+
+    const getShiftDate = (string) => {
+      const time = string.split(":");
+      const shift = { hour: time[0], minute: time[1] };
+      return dayjs().set("hour", shift.hour).set("minute", shift.minute);
+    };
+    const shiftHours = getShiftDate(shift.endTime).diff(
+      getShiftDate(shift.startTime),
+      "hour"
+    );
+    if (
+      !todayAttendence.length &&
+      !Boolean(calcDay.date() >= presentDay.date())
+    ) {
       todayInfo.color = colorScheme.absent;
+      todayInfo.title = "Absent";
       todayInfo.type = "absent";
     }
-    if (todayLeave) {
-      (todayInfo.color = colorScheme.leave), (todayInfo.type = "leave");
-    }
+
     if (isWeekend) {
       todayInfo.color = colorScheme.weekend;
+      todayInfo.title = "Weekend";
       todayInfo.type = "weekend";
     }
     if (todayAttendence.length) {
@@ -245,7 +276,21 @@ const calculateAttendence = async (year, month, shift, user) => {
       });
       todayInfo.attendedHour = attendedHour.format("HH:mm");
       todayInfo.color = colorScheme.present;
-      todayInfo.type = "present";
+      todayInfo.title = "Present";
+      todayInfo.type = "attended";
+      const attendedType = calculateHours(attendedHour.hours, shiftHours);
+      if (attendedType === "unattended") {
+        todayInfo.title = "Absent";
+        todayInfo.color = colorScheme.attendedAbsent;
+      } else if (attendedType === "halfDay") {
+        todayInfo.title = "Half Day";
+      }
+    }
+    if (todayLeave) {
+      todayInfo.color = colorScheme.leave;
+      todayInfo.title = "Leave";
+      todayInfo.type = "leave";
+      todayInfo.leaveReason = todayLeave.Reason;
     }
     userMonth.push(todayInfo);
   }
@@ -277,8 +322,14 @@ exports.getUserMonthDetails = async (req, res) => {
       applicableDepartments: { $in: user.department?._id },
       company: user.company._id,
     });
-    const generalShift = await Shift.findOne({ company: user.company._id });
+    const generalShift = await Shift.findOne({
+      company: user.company._id,
+      type: "general",
+    });
     let userMonth = null;
+    if (!customShift && !generalShift) {
+      return res.status(404).json({ message: "Shift not found" });
+    }
     if (!customShift) {
       userMonth = await calculateAttendence(year, month, generalShift, user);
     } else {
