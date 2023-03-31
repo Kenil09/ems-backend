@@ -255,15 +255,15 @@ exports.updateProfilePic = async (req, res) => {
         height: image.height / 2,
       })
       .toBuffer();
+    const fileType = req.files[0].originalname.split(".");
     const response = await uploadFileToS3(
       { buffer: resizeImage, originalname: files[0].originalname },
       process.env.BUCKET,
-      `profile/${user?._id.toString()}`
+      `profile/${user?._id.toString()}.${fileType[fileType.length - 1]}`
     );
     if (response.$metadata.httpStatusCode !== 200) {
       return res.status(500).json({ message: "Error while uploading picture" });
     }
-    const fileType = req.files[0].originalname.split(".");
     user.profilePicture = `${user._id}.${fileType[fileType.length - 1]}`;
     await user.save();
     res.status(200).json({ message: "Profile picture updated successfully" });
