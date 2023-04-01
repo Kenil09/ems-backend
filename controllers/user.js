@@ -75,6 +75,13 @@ const registerUserValidation = Joi.object({
     .required(),
 });
 
+const updateUserValidation = Joi.object({
+  firstName: Joi.string().required(),
+  lastName: Joi.string().required(),
+  nickName: Joi.string().empty(''),
+  email: Joi.string().email().required(),
+})
+
 exports.postCreateUser = async (req, res) => {
   try {
     const validateRequest = createUserValidation.validate(req.body);
@@ -238,6 +245,36 @@ exports.deleteUser = async (req, res) => {
   }
 };
 
+exports.updateUserDetails = async (req,res)=>{
+  try {
+    const validateRequest=updateUserValidation.validate(req.body);
+    if (validateRequest.error) {
+      console.log(validateRequest.error.details);
+      return res
+        .status(400)
+        .json({ status: "fail", message: validateRequest.error.message });
+    }
+    const userUpdate = {
+      firstName: req.body.firstName,
+      lastName: req.body.lastName,
+      email: req.body.email,
+    };
+    if (req.body.nickName) {
+      userUpdate.nickName = req.body.nickName;
+    }
+    const user = await User.findByIdAndUpdate(req.params.id, userUpdate, { new: true });
+
+    if (!user) {
+      return res.status(404).send({ message: 'User not found' });
+    }
+
+    res.status(200).json({message: "Details is updated successfully", user});
+  } catch (err) {
+    console.error(err);
+    res.status(500).send({ message: 'Internal Server error' });
+  }
+}
+
 exports.updateProfilePic = async (req, res) => {
   try {
     const { files } = req;
@@ -266,7 +303,7 @@ exports.updateProfilePic = async (req, res) => {
     }
     user.profilePicture = `${user._id}.${fileType[fileType.length - 1]}`;
     await user.save();
-    res.status(200).json({ message: "Profile picture updated successfully" });
+    res.status(200).json({ message: "Profile picture updated successfully" ,user});
   } catch (error) {
     console.log("get user by id", error.message);
     res.status(500).json({ message: "Internal sever error" });

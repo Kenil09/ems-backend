@@ -9,6 +9,7 @@ router.post("/register", user.registerUser);
 router.get("/", user.getAllUsers);
 router.get("/:id", verifyToken, user.getUserById);
 router.delete("/:id", verifyToken, user.deleteUser);
+router.put("/:id",verifyToken,user.updateUserDetails);
 router.post("/updateProfilePicture/:id", multer().any(), user.updateProfilePic);
 
 module.exports = router;
