@@ -1,0 +1,68 @@
+This system will manage employees data and communication works
+
+In our App there will be 4 types of user will be
+1. Admin
+2. Manager
+3. Team-Incharge
+4. Team-Member
+
+Flow of company creation
+
+First user will see landing Page
+From there they will sign up in our app by providing company and admin user basic information
+We'll send admin security code for registering himself
+
+Features of our app
+
+Department
+shift
+leave
+attendence
+Tasks
+designation
+Notification
+
+Permission structure
+
+Admin
+can assign anyone task,
+can add attendence entry of anyone
+broadcast annocements
+can cancel anyones leave
+add, update and delete user, shift, designation, departments
+
+Manager (this role can do all thing described below but for only departments assigned to him)
+can assign anyone task,
+broadcast annocements
+can cancel anyones leave
+add, update and delete user
+assign shift to any user
+
+Team Incharge (this role can do all thing described below but for only it's direct reportee)
+can assign anyone task,
+can cancel anyones leave
+broadcast annocements
+
+Team Memeber (this role can not do any changes)
+can changes basic information of himself
+apply for leave 
+submit task
+
+
+Task feature :-
+
+Admin, manager or team Incharge will assign tasks to other 
+    Every task have assignee and reporter who can discuss task in chat feature below task details
+    After task completes assignee will submit tasks by providing submission Fields
+    Now Task will go to reporter who will review task and give rating to assignee 
+on task and either complete task or assign back to assignee if some work is incomplete
+
+
+Calculating attendence based on shifts :-
+
+We calculate attendence based on shift definition
+There are two types of shift - general and custom
+If no custom shift is assigned to department then they will calculate holidays based on general shift
+
+Notification :- working on schema
+Leave :- 

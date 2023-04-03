@@ -1,0 +1,38 @@
+{
+  "name": "ems-backend",
+  "version": "1.0.0",
+  "description": "employee management system backend",
+  "main": "index.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "nodemon index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Kenil09/ems-backend.git"
+  },
+  "author": "kenil",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Kenil09/ems-backend/issues"
+  },
+  "homepage": "https://github.com/Kenil09/ems-backend#readme",
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.290.0",
+    "@aws-sdk/client-ses": "^3.279.0",
+    "aws-sdk": "^2.1323.0",
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.5",
+    "dayjs": "^1.11.7",
+    "dotenv": "^16.0.3",
+    "express": "^4.18.2",
+    "joi": "^17.7.0",
+    "jsonwebtoken": "^9.0.0",
+    "mongoose": "^6.8.4",
+    "multer": "^1.4.5-lts.1",
+    "nodemon": "^2.0.20",
+    "sharp": "^0.32.0"
+  }
+}
