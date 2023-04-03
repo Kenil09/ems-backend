@@ -13,6 +13,9 @@ const attendenceSchema = new Schema(
       type: Schema.Types.ObjectId,
       ref: "User",
     },
+    manual: {
+      type: Schema.Types.Boolean,
+    },
   },
   {
     timestamps: true,

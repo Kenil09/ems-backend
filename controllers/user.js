@@ -182,14 +182,27 @@ exports.postLoginUser = async (req, res) => {
 
 exports.getAllUsers = async (req, res) => {
   try {
-    const users = await User.find().populate([
-      "company",
-      "department",
-      "designation",
-      "reportingManager",
-      "createdBy",
-      "updatedBy",
-    ]);
+    let users = null;
+    if (req.query.companyId) {
+      console.log(req.query);
+      users = await User.find({ company: req.query.companyId }).populate([
+        "company",
+        "department",
+        "designation",
+        "reportingManager",
+        "createdBy",
+        "updatedBy",
+      ]);
+    } else {
+      users = await User.find().populate([
+        "company",
+        "department",
+        "designation",
+        "reportingManager",
+        "createdBy",
+        "updatedBy",
+      ]);
+    }
     res.status(200).json({ users });
   } catch (error) {
     console.log("get All User", error.message);

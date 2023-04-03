@@ -42,12 +42,12 @@ exports.getAttendenceEntry = async (req, res) => {
         .status(400)
         .json({ status: "fail", message: validateRequest.error.message });
     }
-    const startDate = dayjs(req.body.date).startOf("day");
-    const endDate = dayjs(startDate).endOf("day");
-
+    const startDate = dayjs(req.body.date);
+    const endDate = dayjs(startDate).add(24, "hours");
     const userEntries = await Attendence.find({
       user: req.body.userId,
-      createdAt: { $gte: startDate.toDate(), $lte: endDate.toDate() },
+      checkIn: { $gte: startDate.toISOString(), $lte: endDate.toISOString() },
+      checkOut: { $gte: startDate.toISOString(), $lte: endDate.toISOString() },
     }).populate(["user"]);
 
     res.status(200).json({ attendence: userEntries });
@@ -93,7 +93,7 @@ exports.updateAttendenceEntry = async (req, res) => {
 
 exports.deleteAttendenceEntry = async (req, res) => {
   try {
-    if (req.params.id) {
+    if (!req.params.id) {
       return res.status(400).json({ message: "bad request" });
     }
     const attendence = await Attendence.findByIdAndDelete(req.params.id);
@@ -117,7 +117,7 @@ exports.addAttendenceEntry = async (req, res) => {
         .status(400)
         .json({ status: "fail", message: validateRequest.error.message });
     }
-    const addEntry = new Attendence(req.body);
+    const addEntry = new Attendence({ ...req.body, manual: true });
     const result = await (await addEntry.save()).populate("user");
     res
       .status(200)
@@ -225,7 +225,8 @@ const calculateAttendence = async (year, month, shift, user) => {
   );
   const attendences = await Attendence.find({
     user: user._id,
-    createdAt: { $gte: startMonth.toISOString(), $lte: endMonth.toISOString() },
+    checkIn: { $gte: startMonth.toISOString(), $lte: endMonth.toISOString() },
+    checkOut: { $gte: startMonth.toISOString(), $lte: endMonth.toISOString() },
   });
   const leaves = await Leave.find({
     employee: user._id,
@@ -233,15 +234,16 @@ const calculateAttendence = async (year, month, shift, user) => {
     CancelledBy: null,
   });
   const userMonth = [];
-  const presentDay = dayjs();
+  const presentDay = dayjs().startOf("day").add(dayjs().utcOffset(), "minutes");
   for (let i = 1; i <= startMonth.daysInMonth(); i++) {
     const calcDay = dayjs([year, month, i]).add(
       dayjs([year, month, i]).utcOffset(),
       "minutes"
     );
-    const todayAttendence = attendences.filter(
-      (attendence) => dayjs(attendence.createdAt).get("D") === calcDay.get("D")
-    );
+    const todayAttendence = attendences.filter((attendence) => {
+      return dayjs(attendence.checkIn).get("D") === calcDay.get("D");
+    });
+    console.log(calcDay.toDate(), attendences);
     const todayLeave = leaves.find((leave) => {
       return (
         calcDay.get("date") >= dayjs(leave.FromDate).get("date") &&
@@ -271,7 +273,7 @@ const calculateAttendence = async (year, month, shift, user) => {
     );
     if (
       !todayAttendence.length &&
-      !Boolean(calcDay.date() >= presentDay.date())
+      !Boolean(calcDay.toDate() >= presentDay.toDate())
     ) {
       todayInfo.color = colorScheme.absent;
       todayInfo.title = "Absent";
@@ -295,7 +297,7 @@ const calculateAttendence = async (year, month, shift, user) => {
       todayInfo.color = colorScheme.present;
       todayInfo.title = "Present";
       todayInfo.type = "attended";
-      const attendedType = calculateHours(attendedHour.hours, shiftHours);
+      const attendedType = calculateHours(attendedHour.hours(), shiftHours);
       if (attendedType === "unattended") {
         todayInfo.title = "Absent";
         todayInfo.color = colorScheme.attendedAbsent;
