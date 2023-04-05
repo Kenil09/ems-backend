@@ -243,7 +243,6 @@ const calculateAttendence = async (year, month, shift, user) => {
     const todayAttendence = attendences.filter((attendence) => {
       return dayjs(attendence.checkIn).get("D") === calcDay.get("D");
     });
-    console.log(calcDay.toDate(), attendences);
     const todayLeave = leaves.find((leave) => {
       return (
         calcDay.get("date") >= dayjs(leave.FromDate).get("date") &&
@@ -252,7 +251,7 @@ const calculateAttendence = async (year, month, shift, user) => {
     });
 
     // const presentWeek = calcDay.week() - startMonth.week();
-    const presentWeek = getPresentWeek(calcDay.day());
+    const presentWeek = getPresentWeek(calcDay.date());
     const isWeekend =
       shift.weekDefinition[presentWeek][calcDay.format("dddd").toLowerCase()];
     const todayInfo = {
