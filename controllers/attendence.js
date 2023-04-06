@@ -109,6 +109,43 @@ exports.deleteAttendenceEntry = async (req, res) => {
   }
 };
 
+const checkConflictingEntries = async (newCheckIn, newCheckOut, user) => {
+  const date = dayjs(newCheckIn);
+  const today = new Date(date.year(), date.month(), date.date());
+  const tomorrow = dayjs(today).add(24, "hours");
+
+  const newEntryCheckIn = new Date(newCheckIn);
+  const newEntryCheckOut = new Date(newCheckOut);
+
+  const prevEntries = await Attendence.find({
+    user,
+    checkIn: { $gte: today.toISOString(), $lte: tomorrow.toISOString() },
+    checkOut: { $gte: today.toISOString(), $lte: tomorrow.toISOString() },
+  });
+
+  let foundDuplicate = false;
+
+  if (!prevEntries.length) {
+    return false;
+  }
+
+  prevEntries.forEach((entry) => {
+    const existingEntryCheckIn = entry.checkIn;
+    const existingEntryCheckOut = entry.checkOut;
+
+    if (
+      (newEntryCheckIn >= existingEntryCheckIn &&
+        newEntryCheckIn < existingEntryCheckOut) ||
+      (newEntryCheckOut > existingEntryCheckIn &&
+        newEntryCheckOut <= existingEntryCheckOut)
+    ) {
+      foundDuplicate = true;
+    }
+  });
+
+  return foundDuplicate;
+};
+
 exports.addAttendenceEntry = async (req, res) => {
   try {
     const validateRequest = manualEntryValidation.validate(req.body);
@@ -117,6 +154,20 @@ exports.addAttendenceEntry = async (req, res) => {
         .status(400)
         .json({ status: "fail", message: validateRequest.error.message });
     }
+
+    const { checkIn, checkOut } = req.body;
+    const duplicateEntries = await checkConflictingEntries(
+      checkIn,
+      checkOut,
+      req.user?._id
+    );
+    if (duplicateEntries) {
+      return res.status(400).json({
+        message:
+          "Your previous entries of this day is conflicting with new entry. Please enter valid hours",
+      });
+    }
+
     const addEntry = new Attendence({ ...req.body, manual: true });
     const result = await (await addEntry.save()).populate("user");
     res
@@ -132,10 +183,12 @@ exports.checkIn = async (req, res) => {
   try {
     const now = new Date();
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const endDay = dayjs(now).endOf("day");
     const checkUserCheckIn = await Attendence.findOne({
       user: req.user._id,
-      createdAt: { $gte: today },
-    }).sort({ createdAt: -1 });
+      checkIn: { $gte: today, $lte: endDay.toDate() },
+      checkOut: { $gte: today, $lte: endDay.toDate() },
+    }).sort({ checkOut: -1, checkIn: -1 });
     if (checkUserCheckIn && !checkUserCheckIn?.checkOut) {
       return res.status(400).json({ message: "User is already check in" });
     }
@@ -160,10 +213,12 @@ exports.checkOut = async (req, res) => {
   try {
     const now = new Date();
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const endDay = dayjs(now).endOf("day");
     const attendence = await Attendence.findOne({
       user: req.user._id,
-      createdAt: { $gte: today },
-    }).sort({ createdAt: -1 });
+      checkIn: { $gte: today, $lte: endDay.toDate() },
+      // checkOut: { $gte: today, $lte: endDay.toDate() },
+    }).sort({ checkIn: -1 });
     if (attendence.checkOut) {
       return res.status(400).json({ message: "User is already checked out" });
     }
@@ -364,10 +419,14 @@ exports.userStatus = async (req, res) => {
   try {
     const now = new Date();
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const endDay = dayjs(now).endOf("day");
     const checkUserCheckIn = await Attendence.findOne({
       user: req.params.id,
-      createdAt: { $gte: today },
-    }).sort({ createdAt: -1 });
+      checkIn: { $gte: today, $lte: endDay.toDate() },
+      // checkOut: { $gte: today, $lte: endDay.toDate() },
+    }).sort({ checkIn: -1 });
+
+    console.log("checkUserCheckIn", checkUserCheckIn);
     if (!checkUserCheckIn) {
       return res.status(200).json({ checkIn: false });
     }

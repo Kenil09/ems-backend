@@ -40,7 +40,9 @@ exports.postAddDepartment = async (req, res) => {
 
 exports.getAllDepartment = async (req, res) => {
   try {
-    const departments = await Department.find().populate([
+    const departments = await Department.find({
+      company: req.user.company._id,
+    }).populate([
       "company",
       "createdBy",
       "departmentLead",
