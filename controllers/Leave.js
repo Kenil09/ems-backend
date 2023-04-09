@@ -32,7 +32,6 @@ function isDateEqual(fromDate, ToDate) {
 // Function to apply for leave
 exports.applyLeave = async (req, res) => {
   const { employee, leaveType, fromDate, toDate, reason } = req.body;
-  console.log(fromDate, "fromDate");
   try {
     // Find the user's leave record
     const validLeaveTypes = [
@@ -42,8 +41,6 @@ exports.applyLeave = async (req, res) => {
       "sabbaticalLeave",
       "sickLeave",
     ];
-    console.log(leaveType, "leaveTypes");
-    console.log(validLeaveTypes.includes(leaveType));
     if (!validLeaveTypes.includes(leaveType)) {
       return res.status(400).json({ message: "Invalid leave type" });
     }
@@ -75,7 +72,6 @@ exports.applyLeave = async (req, res) => {
       return res.status(400).json({ message: "Insufficient leave balance" });
     }
 
-    console.log("hii");
     // Check if the employee has already applied for leave on the given dates
     const existingLeave = await Leave.findOne({
       employee: employee,
@@ -129,7 +125,6 @@ exports.setLeaves = async (req, res) => {
   try {
     const validateRequest = validateCompanyLeaveAccount.validate(req.body);
     if (validateRequest.error) {
-      console.log(validateRequest.error.details);
       return res
         .status(400)
         .json({ status: "fail", message: validateRequest.error.message });
@@ -143,7 +138,6 @@ exports.setLeaves = async (req, res) => {
       sickLeave,
     } = req.body;
     const isLeaveSetted = await Company.findOne({ _id: companyId });
-    console.log(isLeaveSetted, "isleaveSetted");
     if (isLeaveSetted.configured) {
       return res
         .status(400)
@@ -175,7 +169,6 @@ exports.approveLeave = async (req, res) => {
     const { userId } = req.body;
 
     // Check if leave exists and is pending
-    console.log(leaveId, "leaveId");
     const leave = await Leave.findOne({ _id: leaveId, Status: "Pending" });
     if (!leave) {
       return res
@@ -250,7 +243,6 @@ exports.getAvailableLeaves = async (req, res) => {
   try {
     const leaves = await TypeLeave.findOne({ employee: req.params.userId });
     const user = await User.findOne({ _id: req.params.userId });
-    console.log(user, "User");
     if (leaves && user) {
       return res.status(200).json({ success: true, leaves });
     }
@@ -274,25 +266,21 @@ exports.getAvailableLeaves = async (req, res) => {
         newUserTypeLeave.sabbaticalLeave.total = sabbaticalLeave;
         newUserTypeLeave.sickLeave.total = sickLeave;
         await newUserTypeLeave.save();
-        return res
-          .status(200)
-          .json({
-            success: true,
-            message: "new Created Leave",
-            leaves: newUserTypeLeave,
-          });
+        return res.status(200).json({
+          success: true,
+          message: "new Created Leave",
+          leaves: newUserTypeLeave,
+        });
       } else {
         const newUserTypeLeave = new TypeLeave({
           employee: req.params.userId,
         });
         await newUserTypeLeave.save();
-        return res
-          .status(200)
-          .json({
-            success: true,
-            message: "new Created Leave",
-            leaves: newUserTypeLeave,
-          });
+        return res.status(200).json({
+          success: true,
+          message: "new Created Leave",
+          leaves: newUserTypeLeave,
+        });
       }
     } else {
       return res

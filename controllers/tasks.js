@@ -2,6 +2,8 @@ const Joi = require("joi");
 const Tasks = require("../models/Tasks");
 const dayjs = require("dayjs");
 const uploadFilesToS3 = require("../utils/upload/uploadFilesToS3");
+const TaskComment = require("../models/TaskComment");
+const Notification = require("../models/Notification");
 
 const createTaskValidation = Joi.object({
   title: Joi.string().required(),
@@ -9,6 +11,12 @@ const createTaskValidation = Joi.object({
   assignee: Joi.string().required(),
   reporter: Joi.string().required(),
   dueDate: Joi.date().required(),
+});
+
+const taskCommentValidation = Joi.object({
+  task: Joi.string().required(),
+  user: Joi.string().required(),
+  message: Joi.string().required(),
 });
 
 const completeTaskValidation = Joi.object({
@@ -116,6 +124,7 @@ exports.completeTask = async (req, res) => {
     }
     task.rating = req.body.rating;
     task.completedDate = dayjs().toISOString();
+    task.state = "completed";
     const result = await (await task.save()).populate(["assignee", "reporter"]);
     res
       .status(200)
@@ -151,7 +160,7 @@ exports.reassignTask = async (req, res) => {
     const result = await (await task.save()).populate(["assignee", "reporter"]);
     res
       .status(200)
-      .json({ message: "Task completed successfully", task: result });
+      .json({ message: "Task Re Opened successfully", task: result });
   } catch (error) {
     console.log("reassign task error", error);
     res.status(500).json({ message: "Internal server error" });
@@ -189,5 +198,47 @@ exports.updateTask = async (req, res) => {
   } catch (error) {
     console.log("task update", error.message);
     res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+exports.commentOnTask = async (req, res) => {
+  try {
+    const validateRequest = taskCommentValidation.validate(req.body);
+    if (validateRequest.error) {
+      return res
+        .status(400)
+        .json({ status: "fail", message: validateRequest.error.message });
+    }
+    const task = await Tasks.findById(req.body.task).lean();
+    let users = [task.reporter.toString(), task.assignee.toString()].filter(
+      (id) => id !== req.user?._id.toString()
+    );
+    console.log(users);
+
+    const notification = new Notification({
+      message: `${req.user?.firstName} ${req.user?.lastName} has commented on task ${task?.title}`,
+      user: users,
+    });
+    await notification.save();
+    const newComment = new TaskComment(req.body);
+    const comment = (await newComment.save()).populate(["user"]);
+    res.status(200).json({ message: "Comment added successfully", comment });
+  } catch (error) {
+    console.log("comment add error", error.message);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+exports.getTaskComments = async (req, res) => {
+  try {
+    if (!req.params.id) {
+      return res.status(404).json({ message: "Invalid request" });
+    }
+    const comments = await TaskComment.find({ task: req.params.id })
+      .populate("user")
+      .sort({ createdAt: -1 });
+    res.status(200).json({ comments });
+  } catch (error) {
+    console.log("Get task comment", error.message);
   }
 };

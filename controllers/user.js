@@ -78,9 +78,9 @@ const registerUserValidation = Joi.object({
 const updateUserValidation = Joi.object({
   firstName: Joi.string().required(),
   lastName: Joi.string().required(),
-  nickName: Joi.string().empty(''),
+  nickName: Joi.string().empty(""),
   email: Joi.string().email().required(),
-})
+});
 
 exports.postCreateUser = async (req, res) => {
   try {
@@ -184,7 +184,6 @@ exports.getAllUsers = async (req, res) => {
   try {
     let users = null;
     if (req.query.companyId) {
-      console.log(req.query);
       users = await User.find({ company: req.query.companyId }).populate([
         "company",
         "department",
@@ -258,9 +257,9 @@ exports.deleteUser = async (req, res) => {
   }
 };
 
-exports.updateUserDetails = async (req,res)=>{
+exports.updateUserDetails = async (req, res) => {
   try {
-    const validateRequest=updateUserValidation.validate(req.body);
+    const validateRequest = updateUserValidation.validate(req.body);
     if (validateRequest.error) {
       console.log(validateRequest.error.details);
       return res
@@ -275,18 +274,20 @@ exports.updateUserDetails = async (req,res)=>{
     if (req.body.nickName) {
       userUpdate.nickName = req.body.nickName;
     }
-    const user = await User.findByIdAndUpdate(req.params.id, userUpdate, { new: true });
+    const user = await User.findByIdAndUpdate(req.params.id, userUpdate, {
+      new: true,
+    });
 
     if (!user) {
-      return res.status(404).send({ message: 'User not found' });
+      return res.status(404).send({ message: "User not found" });
     }
 
-    res.status(200).json({message: "Details is updated successfully", user});
+    res.status(200).json({ message: "Details is updated successfully", user });
   } catch (err) {
     console.error(err);
-    res.status(500).send({ message: 'Internal Server error' });
+    res.status(500).send({ message: "Internal Server error" });
   }
-}
+};
 
 exports.updateProfilePic = async (req, res) => {
   try {
@@ -316,7 +317,9 @@ exports.updateProfilePic = async (req, res) => {
     }
     user.profilePicture = `${user._id}.${fileType[fileType.length - 1]}`;
     await user.save();
-    res.status(200).json({ message: "Profile picture updated successfully" ,user});
+    res
+      .status(200)
+      .json({ message: "Profile picture updated successfully", user });
   } catch (error) {
     console.log("get user by id", error.message);
     res.status(500).json({ message: "Internal sever error" });
