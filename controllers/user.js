@@ -75,13 +75,6 @@ const registerUserValidation = Joi.object({
     .required(),
 });
 
-const updateUserValidation = Joi.object({
-  firstName: Joi.string().required(),
-  lastName: Joi.string().required(),
-  nickName: Joi.string().empty(""),
-  email: Joi.string().email().required(),
-});
-
 exports.postCreateUser = async (req, res) => {
   try {
     const validateRequest = createUserValidation.validate(req.body);
@@ -193,7 +186,7 @@ exports.getAllUsers = async (req, res) => {
         "updatedBy",
       ]);
     } else {
-      users = await User.find().populate([
+      users = await User.find({ company: req?.user?.company?._id }).populate([
         "company",
         "department",
         "designation",
@@ -259,30 +252,31 @@ exports.deleteUser = async (req, res) => {
 
 exports.updateUserDetails = async (req, res) => {
   try {
-    const validateRequest = updateUserValidation.validate(req.body);
-    if (validateRequest.error) {
-      console.log(validateRequest.error.details);
-      return res
-        .status(400)
-        .json({ status: "fail", message: validateRequest.error.message });
-    }
-    const userUpdate = {
-      firstName: req.body.firstName,
-      lastName: req.body.lastName,
-      email: req.body.email,
-    };
-    if (req.body.nickName) {
-      userUpdate.nickName = req.body.nickName;
-    }
-    const user = await User.findByIdAndUpdate(req.params.id, userUpdate, {
-      new: true,
-    });
+    const keys = Object.keys(req.body);
 
+    const user = await User.findById(req.params.id);
     if (!user) {
       return res.status(404).send({ message: "User not found" });
     }
 
-    res.status(200).json({ message: "Details is updated successfully", user });
+    keys.forEach((key) => {
+      user[key] = req.body[key];
+    });
+
+    const result = await (
+      await user.save()
+    ).populate([
+      "company",
+      "department",
+      "designation",
+      "reportingManager",
+      "createdBy",
+      "updatedBy",
+    ]);
+
+    res
+      .status(200)
+      .json({ message: "Details is updated successfully", user: result });
   } catch (err) {
     console.error(err);
     res.status(500).send({ message: "Internal Server error" });
@@ -295,7 +289,14 @@ exports.updateProfilePic = async (req, res) => {
     if (files.length !== 1 && !req.params.id) {
       return res.status(400).json({ message: "Bad request" });
     }
-    const user = await User.findById(req.params.id);
+    const user = await User.findById(req.params.id).populate([
+      "company",
+      "department",
+      "designation",
+      "reportingManager",
+      "createdBy",
+      "updatedBy",
+    ]);
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }

@@ -38,6 +38,7 @@ exports.postAddCompany = async (req, res) => {
       startTime: "09:00",
       endTime: "21:00",
       company: company?._id,
+      type: "general",
       weekDefinition: [
         {
           sunday: true,
