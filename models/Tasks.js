@@ -48,6 +48,9 @@ const taskSchema = new Schema(
     completedDate: {
       type: Schema.Types.Date,
     },
+    reassigned: {
+      type: Schema.Types.Boolean,
+    },
   },
   {
     timestamps: true,

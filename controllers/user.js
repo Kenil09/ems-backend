@@ -233,9 +233,9 @@ exports.deleteUser = async (req, res) => {
     if (user?.profilePicture && user?.profilePicture !== "default.jpeg") {
       const response = await removeFilesFromS3(
         process.env.BUCKET,
-        user?.profilePicture
+        `profile/${user?.profilePicture}`
       );
-      if (response.$metadata.httpStatusCode !== 200) {
+      if (response.$metadata.httpStatusCode !== 204) {
         await session.abortTransaction();
         return res.status(500).json({ message: "Internal server error" });
       }

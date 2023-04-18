@@ -4,6 +4,8 @@ const dayjs = require("dayjs");
 const uploadFilesToS3 = require("../utils/upload/uploadFilesToS3");
 const TaskComment = require("../models/TaskComment");
 const Notification = require("../models/Notification");
+const deleteS3Folder = require("../utils/upload/removeFolderFromS3");
+const removeFilesFromS3 = require("../utils/upload/removeFilesFromS3");
 
 const createTaskValidation = Joi.object({
   title: Joi.string().required(),
@@ -157,6 +159,7 @@ exports.reassignTask = async (req, res) => {
       return res.status(404).json({ message: "Task not found" });
     }
     task.state = "assigned";
+    task.reassigned = true;
     const result = await (await task.save()).populate(["assignee", "reporter"]);
     res
       .status(200)
@@ -240,5 +243,43 @@ exports.getTaskComments = async (req, res) => {
     res.status(200).json({ comments });
   } catch (error) {
     console.log("Get task comment", error.message);
+  }
+};
+
+exports.deleteTask = async (req, res) => {
+  try {
+    const task = await Tasks.findById(req.params.id);
+    if (!task) {
+      return res.status(404).json({ message: "Task not found" });
+    }
+    await deleteS3Folder(process.env.BUCKET, `tasks/${req.params.id}/`)
+      .then(async () => {
+        await task.delete();
+        return res.status(200).json({ message: "Task deleted successfully" });
+      })
+      .catch((error) => {
+        console.log("err", error);
+        return res.status(500).json({ message: "Error removing files" });
+      });
+  } catch (error) {
+    console.log("Task delete error", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+exports.deleteAttachment = async (req, res) => {
+  try {
+    const task = await Tasks.findById(req.body.taskId);
+    if (!task) {
+      return res.status(200).json({ message: "Task not found" });
+    }
+    const response = await removeFilesFromS3(process.env.BUCKET, req.body.key);
+    if (response.$metadata.httpStatusCode !== 204) {
+      return res.status(500).json({ message: "Internal server error" });
+    }
+    res.status(200).json({ message: "File removed successfully" });
+  } catch (error) {
+    console.log("Task file delete error", error);
+    res.status(500).json({ message: "Internal server error" });
   }
 };

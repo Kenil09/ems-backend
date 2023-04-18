@@ -8,6 +8,8 @@ const {
   updateTask,
   commentOnTask,
   getTaskComments,
+  deleteTask,
+  deleteAttachment,
 } = require("../controllers/tasks");
 const { verifyToken } = require("../middleware/auth");
 const multer = require("multer");
@@ -20,5 +22,7 @@ router.get("/reassign/:id", reassignTask);
 router.put("/:id", updateTask);
 router.post("/addComment", verifyToken, commentOnTask);
 router.get("/comment/:id", getTaskComments);
+router.delete("/:id", verifyToken, deleteTask);
+router.post("/removeFile", verifyToken, deleteAttachment);
 
 module.exports = router;
