@@ -303,8 +303,8 @@ exports.updateProfilePic = async (req, res) => {
     const image = await sharp(files[0].buffer).metadata();
     const resizeImage = await sharp(files[0].buffer)
       .resize({
-        width: image.width / 2,
-        height: image.height / 2,
+        width: Math.ceil(image.width / 2),
+        height: Math.ceil(image.height / 2),
       })
       .toBuffer();
     const fileType = req.files[0].originalname.split(".");

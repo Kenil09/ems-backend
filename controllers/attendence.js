@@ -159,7 +159,7 @@ exports.addAttendenceEntry = async (req, res) => {
     const duplicateEntries = await checkConflictingEntries(
       checkIn,
       checkOut,
-      req.user?._id
+      req.body.userId
     );
     if (duplicateEntries) {
       return res.status(400).json({
